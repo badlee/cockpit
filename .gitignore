@@ -29,6 +29,7 @@ package-lock.json
 !/storage/*/.htaccess
 !/addons/.gitignore
 !/.vscode/sftp.json
+!/config/cockpit/
 defines.php
 # Sublime Text
 *.sublime-workspace
