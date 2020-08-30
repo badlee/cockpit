@@ -17,7 +17,7 @@ class Media extends \Cockpit\AuthController {
     public function api() {
 
         $cmd       = $this->param('cmd', false);
-        $mediapath = $this->module('cockpit')->getGroupVar('finder.path', '');
+        $mediapath = $this->module('cockpit')->getGroupVar('finder.path', '/storage');
 
         if (!$mediapath && !$this->module('cockpit')->isSuperAdmin()) {
             $this->root = rtrim($this->app->path("#uploads:"), '/');
