@@ -307,6 +307,7 @@ class UtilArrayQuery {
                                     : {$d}=={$_value}
                                 )
                             )";
+                            // find in numeric array
                             if($keys && count($keys) == 2){
                                 $_query = "(" . $_query ." || (
                                     array_keys({$_d}['{$keys[0]}']) === range(0, count({$_d}['{$keys[0]}']) - 1) && 
