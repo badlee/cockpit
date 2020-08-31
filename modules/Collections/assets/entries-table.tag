@@ -66,7 +66,7 @@
                 </div>
             </div>
             <a if="{collection.canCreate}" class="uk-button uk-button-large uk-button-primary"
-                onclick="{ parent.newEntry }">{App.i18n.get('Add Entry')}</a>
+        href="{collection.createEntryUrl}">{App.i18n.get('Add Entry')}</a>
         </div>
     </div>
     <div class="uk-margin-top">
@@ -86,7 +86,7 @@
                 </div>
                 <hr>
                 <span class="uk-text-large"><strong>{App.i18n.get('No entries')}.</strong> <a
-                        href="{collection.createEntry}">{App.i18n.get('Create an entry')}.</a></span>
+                        href="{collection.createEntryUrl}">{App.i18n.get('Create an entry')}.</a></span>
             </div>
         </div>
         <div class="uk-margin-top" show="{ !loading  }">
