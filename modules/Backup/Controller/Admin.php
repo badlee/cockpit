@@ -1,6 +1,6 @@
 <?php
 
-namespace BackupAndRestore\Controller;
+namespace Backup\Controller;
 
 use \Cockpit\AuthController;
 use \ZipArchive;
@@ -28,7 +28,7 @@ class Admin extends AuthController {
    * Default index controller.
    */
   public function index() {
-    if (!$this->app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.view')) {
+    if (!$this->app->module('cockpit')->hasaccess('Backup', 'manage.view')) {
       return FALSE;
     }
 
@@ -41,7 +41,7 @@ class Admin extends AuthController {
     $backupsPath = $this->app->path('#storage:') . '/backups';
     $backupsPath = trim(str_replace($this->app->path('#root:'), '', $backupsPath));
 
-    return $this->render('backupandrestore:views/backups/index.php', [
+    return $this->render('backup:views/backups/index.php', [
       'backupsPath' => $backupsPath,
     ]);
   }
@@ -117,7 +117,7 @@ class Admin extends AuthController {
    * View backup controller.
    */
   public function view($backup) {
-    if (!$this->app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.view')) {
+    if (!$this->app->module('cockpit')->hasaccess('Backup', 'manage.view')) {
       return FALSE;
     }
 
@@ -246,7 +246,7 @@ class Admin extends AuthController {
 
     $zip->close();
 
-    return $this->render('backupandrestore:views/backups/view.php', [
+    return $this->render('backup:views/backups/view.php', [
       'info' => $info['backup'],
       'name' => $backup,
       'filename' => $backup . '.zip',
@@ -267,7 +267,7 @@ class Admin extends AuthController {
    * Create Backup controller.
    */
   public function create() {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.create')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.create')) {
       return FALSE;
     }
 
@@ -276,14 +276,14 @@ class Admin extends AuthController {
       unset($definitions['regions']);
     }
 
-    return $this->render('backupandrestore:views/backups/create.php', ['definitions' => array_keys($definitions)]);
+    return $this->render('backup:views/backups/create.php', ['definitions' => array_keys($definitions)]);
   }
 
   /**
    * Save Backup controller.
    */
   public function save() {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.create')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.create')) {
       return FALSE;
     }
 
@@ -295,14 +295,14 @@ class Admin extends AuthController {
       return FALSE;
     }
 
-    return $this->app->module('backupandrestore')->saveBackup($description, $options);
+    return $this->app->module('backup')->saveBackup($description, $options);
   }
 
   /**
    * Restore Backup controller.
    */
   public function restore($backup = NULL) {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.restore')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.restore')) {
       return FALSE;
     }
 
@@ -325,7 +325,7 @@ class Admin extends AuthController {
       $info['backup']['regions'] = FALSE;
     }
 
-    return $this->render('backupandrestore:views/backups/restore.php', [
+    return $this->render('backup:views/backups/restore.php', [
       'info' => $info['backup'],
       'name' => $backup,
       'backup' => $backup . '.zip',
@@ -336,7 +336,7 @@ class Admin extends AuthController {
    * Delete Backup controller.
    */
   public function delete($backup) {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.delete')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.delete')) {
       return FALSE;
     }
 
@@ -354,7 +354,7 @@ class Admin extends AuthController {
    * Download Backup controller.
    */
   public function download($backup) {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.view')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.view')) {
       $this->app->stop();
     }
 
@@ -387,7 +387,7 @@ class Admin extends AuthController {
    *   The operation key to perform the restore.
    */
   public function restoreBackup($operation) {
-    if (!$this->app->module("cockpit")->hasaccess("BackupAndRestore", 'manage.restore')) {
+    if (!$this->app->module("cockpit")->hasaccess("Backup", 'manage.restore')) {
       return ['status' => 'danger', 'msg' => 'Invalid access!'];
     }
 

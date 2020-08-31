@@ -1,4 +1,4 @@
-<div class="uk-container-breakout">
+<div class="uk-container uk-container-center">
     <iframe id="graphiQL" src="@route('/cockpitql/graphiql')" width="100%" frameborder="0"></iframe>
 </div>
 

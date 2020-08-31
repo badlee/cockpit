@@ -1,6 +1,6 @@
 <div>
     <ul class="uk-breadcrumb">
-        <li><a href="@route('/backup-and-restore')">@lang('Backup And Restore')</a></li>
+        <li><a href="@route('/backup')">@lang('Backup')</a></li>
         <li class="uk-active"><span>@lang('Details')</span></li>
     </ul>
 </div>
@@ -132,7 +132,7 @@
         <ul class="uk-nav">
             <li class="uk-nav-header">@lang('Actions')</li>
             <li>
-                <a class="uk-button uk-button-small uk-button-primary" href="@route('/backup-and-restore/restore/{ name }')"><i class="uk-icon-refresh"></i> @lang('Restore')</a>
+                <a class="uk-button uk-button-small uk-button-primary" href="@route('/backup/restore/{ name }')"><i class="uk-icon-refresh"></i> @lang('Restore')</a>
             </li>
             <li class="uk-nav-divider"></li>
             <li>
@@ -140,7 +140,7 @@
             </li>
             <li class="uk-nav-divider"></li>
             <li>
-                <a class="uk-button uk-button-small" href="@route('/backup-and-restore')">@lang('Cancel')</a>
+                <a class="uk-button uk-button-small" href="@route('/backup')">@lang('Cancel')</a>
             </li>
             <li class="uk-nav-divider"></li>
             <li>
@@ -170,7 +170,7 @@
         download(e) {
             e.stopPropagation();
 
-            window.open(App.route('/backup-and-restore/download/' + this.name));
+            window.open(App.route('/backup/download/' + this.name));
         }
 
         toggleConfig(status) {
@@ -179,10 +179,10 @@
 
         remove(e) {
             App.ui.confirm("Are you sure?", function() {
-                App.request('/backup-and-restore/delete/' + $this.name).then(function(data) {
+                App.request('/backup/delete/' + $this.name).then(function(data) {
                     App.ui.notify("Entry removed", "success");
                     setTimeout(function() {
-                        location.href = App.route('/backup-and-restore');
+                        location.href = App.route('/backup');
                     }, 1000)
                 });
             }.bind(this));

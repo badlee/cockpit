@@ -10,7 +10,7 @@
 
 <div>
     <ul class="uk-breadcrumb">
-        <li><a href="@route('/backup-and-restore')">@lang('Backup And Restore')</a></li>
+        <li><a href="@route('/backup')">@lang('Backup')</a></li>
         <li class="uk-active"><span>@lang('Restore')</span></li>
     </ul>
 </div>
@@ -55,7 +55,7 @@
 
         <div>
             <button class="uk-button uk-button-large uk-button-primary uk-margin-right">@lang('Restore')</button>
-            <a href="@route('/backup-and-restore')">@lang('Cancel')</a>
+            <a href="@route('/backup')">@lang('Cancel')</a>
         </div>
 
     </form>
@@ -87,7 +87,7 @@
 
             <div class="uk-margin">
                 <div class="uk-panel">
-                    <a class="uk-button uk-button-large uk-button-primary uk-margin-right" href="@route('/backup-and-restore')" if="{ !restoring }">
+                    <a class="uk-button uk-button-large uk-button-primary uk-margin-right" href="@route('/backup')" if="{ !restoring }">
                         @lang('Return to backups list')
                     </a>
                 </div>
@@ -140,7 +140,7 @@
                     if (option.value) {
                         $this.operations.push({'name': option.key, 'label': option.label, 'status': 'running'});
                         promises.push(
-                            App.request("/backup-and-restore/restorebackup/" + option.key, settings).then(function(data){
+                            App.request("/backup/restorebackup/" + option.key, settings).then(function(data){
                                 setTimeout(function() {
                                     $this.updateOperation(option.key, data.status || 'danger')
                                 }, 500);
@@ -152,7 +152,7 @@
 
                 Promise.all(promises).then(function() {
                     // Clear caches.
-                    App.request("/backup-and-restore/restorebackup/clearCaches", settings).then(function(data){
+                    App.request("/backup/restorebackup/clearCaches", settings).then(function(data){
                         $this.operations.push({'name': 'clearCaches', 'label': 'Clear Caches', 'status': 'success'});
                         setTimeout(function() {
                             $this.restoring = false;

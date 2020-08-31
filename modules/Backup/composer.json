@@ -1,7 +1,7 @@
 {
-    "name": "pauloamgomes/backupandrestore",
+    "name": "pauloamgomes/backup",
     "type": "project",
-    "description": "Backup and Restore addon for Cockpit CMS.",
+    "description": "Backup addon for Cockpit CMS.",
     "keywords": ["cms", "headless", "api", "cockpit", "backups"],
     "homepage": "https://github.com/pauloamgomes/Cockpit-Backup-and-Restore",
     "license": "MIT",

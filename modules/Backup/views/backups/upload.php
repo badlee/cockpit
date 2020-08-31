@@ -1,6 +1,6 @@
 <div>
     <ul class="uk-breadcrumb">
-        <li><a href="@route('/backup-and-restore')">@lang('Backup And Restore')</a></li>
+        <li><a href="@route('/backup')">@lang('Backup')</a></li>
         <li class="uk-active"><span>@lang('Upload')</span></li>
     </ul>
 </div>

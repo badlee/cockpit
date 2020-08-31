@@ -1,6 +1,6 @@
 <?php
 
-namespace BackupAndRestore\Controller;
+namespace Backup\Controller;
 
 use \LimeExtra\Controller;
 
@@ -40,7 +40,7 @@ class RestApi extends Controller {
       unset($options['regions']);
     }
 
-    return $this->app->module('backupandrestore')->saveBackup($description, $options);
+    return $this->app->module('backup')->saveBackup($description, $options);
   }
 
 }

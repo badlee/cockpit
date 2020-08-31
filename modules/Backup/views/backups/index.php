@@ -1,12 +1,12 @@
 <div>
     <ul class="uk-breadcrumb">
-        <li class="uk-active"><span>@lang('Backup And Restore')</span></li>
+        <li class="uk-active"><span>@lang('Backup')</span></li>
     </ul>
 </div>
 
 <div class="uk-margin-top" riot-view>
 
-    @if($app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.view'))
+    @if($app->module('cockpit')->hasaccess('Backup', 'manage.view'))
     <div class="uk-form uk-clearfix" show="{!loading}">
 
         <span class="uk-form-icon">
@@ -15,12 +15,12 @@
         </span>
 
         <div class="uk-float-right">
-            @if($app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.create'))
+            @if($app->module('cockpit')->hasaccess('Backup', 'manage.create'))
             <span class="uk-button uk-button-primary uk-button-large uk-form-file">
                 <input class="js-upload-select" type="file" multiple="true">
                 <i class="uk-icon-upload uk-icon-justify"></i> @lang('Upload')
             </span>
-            <a class="uk-button uk-button-primary uk-button-large" href="@route('/backup-and-restore/create')">
+            <a class="uk-button uk-button-primary uk-button-large" href="@route('/backup/create')">
                 <i class="uk-icon-plus-circle uk-icon-justify"></i> @lang('Backup')
             </a>
             @endif
@@ -70,7 +70,7 @@
         <tbody>
             <tr each="{backup, $index in backups}" if="{ infilter(backup) }">
                 <td>
-                    <a class="uk-link-muted uk-text-small" href="@route('/backup-and-restore/view')/{ backup.name }" title="@lang('View details')">
+                    <a class="uk-link-muted uk-text-small" href="@route('/backup/view')/{ backup.name }" title="@lang('View details')">
                         { backup.filename }
                     </a>
                 </td>
@@ -92,14 +92,14 @@
                         <div class="uk-dropdown">
                             <ul class="uk-nav uk-nav-dropdown uk-dropdown-close">
                                 <li class="uk-nav-header">@lang('Actions')</li>
-                                <li><a href="@route('/backup-and-restore/view')/{ backup.name }">@lang('View')</a></li>
-                                @if($app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.restore'))
-                                <li><a href="@route('/backup-and-restore/restore')/{ backup.name }">@lang('Restore')</a></li>
+                                <li><a href="@route('/backup/view')/{ backup.name }">@lang('View')</a></li>
+                                @if($app->module('cockpit')->hasaccess('Backup', 'manage.restore'))
+                                <li><a href="@route('/backup/restore')/{ backup.name }">@lang('Restore')</a></li>
                                 @endif
-                                @if($app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.download'))
+                                @if($app->module('cockpit')->hasaccess('Backup', 'manage.download'))
                                 <li><a onclick="{ parent.download }">@lang('Download')</a></li>
                                 @endif
-                                @if($app->module('cockpit')->hasaccess('BackupAndRestore', 'manage.delete'))
+                                @if($app->module('cockpit')->hasaccess('Backup', 'manage.delete'))
                                 <li class="uk-nav-item-danger"><a onclick="{ this.parent.remove }">@lang('Delete')</a></li>
                                 @endif
                             </ul>
@@ -202,7 +202,7 @@
         remove(evt) {
             var backup = evt.item.backup;
             App.ui.confirm("Are you sure?", function() {
-                App.request('/backup-and-restore/delete/' + backup.name).then(function(data){
+                App.request('/backup/delete/' + backup.name).then(function(data){
                     App.ui.notify("Backup removed", "success");
                     $this.backups.splice(evt.item.$index, 1);
                     $this.update();
@@ -265,7 +265,7 @@
 
             this.loading = true;
 
-            return App.request('/backup-and-restore/find', {options:options}).then(function(data){
+            return App.request('/backup/find', {options:options}).then(function(data){
                 this.backups  = data.backups;
                 this.pages    = data.pages;
                 this.page     = data.page;
@@ -299,7 +299,7 @@
             e.stopPropagation();
             item = e.item.backup;
 
-            window.open(App.route('/backup-and-restore/download/' + item.name));
+            window.open(App.route('/backup/download/' + item.name));
         }
 
     </script>

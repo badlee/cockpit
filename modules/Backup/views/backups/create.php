@@ -1,6 +1,6 @@
 <div>
     <ul class="uk-breadcrumb">
-        <li><a href="@route('/backup-and-restore')">@lang('Backup And Restore')</a></li>
+        <li><a href="@route('/backup')">@lang('Backup')</a></li>
         <li class="uk-active"><span>@lang('Create')</span></li>
     </ul>
 </div>
@@ -36,7 +36,7 @@
 
         <div class="uk-width-medium-1-2">
             <button class="uk-button uk-button-large uk-width-1-3 uk-button-primary uk-margin-right">@lang('Create')</button>
-            <a href="@route('/backup-and-restore')">@lang('Cancel')</a>
+            <a href="@route('/backup')">@lang('Cancel')</a>
         </div>
 
     </form>
@@ -79,12 +79,12 @@
             if(e) e.preventDefault();
             this.loading = true;
             this.update();
-            App.request("/backup-and-restore/save", {"description": this.description, "options": this.options}).then(function(data){
+            App.request("/backup/save", {"description": this.description, "options": this.options}).then(function(data){
                 $this.backup = data;
                 App.ui.notify("Backup created", "success");
                 setTimeout(function() {
                     this.loading = false;
-                  location.href = App.route('/backup-and-restore');
+                  location.href = App.route('/backup');
                 }, 1000)
             },function(err){
                 this.loading = false;

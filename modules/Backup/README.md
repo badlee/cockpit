@@ -1,16 +1,16 @@
-# Cockpit Backup and Restore
+# Cockpit Backup
 
-This addon extends Cockpit CMS core functionality by providing a granular and flexible backup and restore mechanism.
+This addon extends Cockpit CMS core functionality by providing a granular and flexible backup mechanism.
 
 ## Installation
 
 1. Confirm that you have Cockpit CMS (Next branch) installed and working.
-2. Download zip and extract to 'your-cockpit-docroot/addons' (e.g. cockpitcms/addons/BackupAndRestore)
-3. Access module settings (http://your-cockpit-site/backup-and-restore) and confirm that page loads.
+2. Download zip and extract to 'your-cockpit-docroot/addons' (e.g. cockpitcms/addons/Backup)
+3. Access module settings (http://your-cockpit-site/backup) and confirm that page loads.
 
 ## Configuration
 
-The Backup and Restore operations are available to the super admin user, and they can be used by other users if they belong to a group with proper permissions. The following permissions are defined:
+The Backup operations are available to the super admin user, and they can be used by other users if they belong to a group with proper permissions. The following permissions are defined:
 
   - manage.create → Can create and upload backups
   - manage.view → Can view and download backups
@@ -22,7 +22,7 @@ Above ACLs can be added to the global configuration file as below:
 ```
 groups:
   managers:
-    BackupAndRestore:
+    Backup:
         manage.create: true
         manage.view: true
         manage.restore: true
@@ -51,9 +51,9 @@ Screencast: https://monosnap.com/file/Sngzezd9uGNDogT2WXKI7490pik1Xm
 
 ### Creating a backup (REST API)
 
-It's possible to create a backup using the REST API, that can be useful for example for doing automatic backups on cron execution. For using the rest API is required to have a configured token (global or that can use the backupandrestore/create rule):
+It's possible to create a backup using the REST API, that can be useful for example for doing automatic backups on cron execution. For using the rest API is required to have a configured token (global or that can use the backup/create rule):
 
-![Cockpit Backup and Restore tokens](https://monosnap.com/file/ShR21HGENGSodKWVKBv3BBQDLM9Kpx.png)
+![Cockpit Backup tokens](https://monosnap.com/file/ShR21HGENGSodKWVKBv3BBQDLM9Kpx.png)
 
 Triggering the backup only requires a request like in the screencast https://monosnap.com/file/VufnXlEbeIy0cgFgqKJMhJZI0PTkzO
 

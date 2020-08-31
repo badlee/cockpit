@@ -5,7 +5,7 @@
  * Cockpit module bootstrap implementation.
  */
 
-$this->module("backupandrestore")->extend([
+$this->module("backup")->extend([
   'saveBackup' => function ($description, $options = []) {
     $toSave = [];
     foreach ($options as $option) {
@@ -123,6 +123,6 @@ if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
 // If REST include handlers for remote backup actions.
 if (COCKPIT_API_REQUEST) {
   $this->on('cockpit.rest.init', function ($routes) {
-      $routes['backupandrestore'] = 'BackupAndRestore\\Controller\\RestApi';
+      $routes['backup'] = 'Backup\\Controller\\RestApi';
   });
 }

@@ -278,7 +278,7 @@ class Admin extends \Cockpit\AuthController {
             foreach ($_collections as $name => $meta) {
                 if(isset($meta['fields']) && $meta['fields']){
                     foreach ($meta["fields"] as $field) {
-                        if($field["type"] == "collectionlink" && isset($field["options"],$field["options"]["link"]) && $field["options"]["link"] == $collection['name']){
+                        if(($field["type"] == "collectionlink" || $field["type"] == "collectionlinkselect") && isset($field["options"],$field["options"]["link"]) && $field["options"]["link"] == $collection['name']){
                             $field["label"] = empty($field["label"]) ? ucfirst($field["name"]) : $field["label"];
                             if(!isset($linked[$name])) {
                                 $linked[$name] = $meta;

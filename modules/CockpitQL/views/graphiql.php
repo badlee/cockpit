@@ -13,6 +13,9 @@
       overflow: hidden;
       width: 100%;
     }
+    .graphiql-container .editorWrap{
+      overflow: hidden !important;
+    }
   </style>
   <link href="//unpkg.com/graphiql@0.11.11/graphiql.css" rel="stylesheet" />
   <script src="//unpkg.com/react@15.6.1/dist/react.min.js"></script>
@@ -22,7 +25,7 @@
   <script src="//cdn.jsdelivr.net/fetch/2.0.1/fetch.min.js"></script>
   
 </head>
-<body>
+<body  style='overflow: hidden'>
   <script>
     // Collect the URL parameters
     var parameters = {};
@@ -111,7 +114,7 @@
     );
   </script>
 
-<style>
+<style type="text/cssx" style="display:none">
 
 /* GraphiQL One Dark Alt (Dark Mode) theme by Ben Keating[1]
  * Colors taken from Atom's One Dark theme[2]. Add this file to the end of 
