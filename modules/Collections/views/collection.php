@@ -37,7 +37,7 @@
                         <div data-uk-dropdown="pos:'right-center', mode:'click'">
                             <a><img class="uk-display-block uk-margin uk-container-center" riot-src="{ collection.icon ? '@url('assets:app/media/icons/')'+collection.icon : '@url('collections:icon.svg')'}" alt="icon" width="100"></a>
                             <div class="uk-dropdown uk-dropdown-scrollable uk-dropdown-width-2">
-                                <div class="uk-grid uk-grid-gutter">
+                                <div class="uk-grid uk-grid-gutter uk-flex-center">
                                     <div>
                                         <a class="uk-dropdown-close" onclick="{ selectIcon }" icon="">
                                             <img src="@url('collections:icon.svg')" width="60" icon="">

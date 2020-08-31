@@ -6,7 +6,13 @@
 </div>
 
 <div class="uk-margin-top" riot-view>
-    <form id="account-form" class="uk-form uk-grid uk-grid-gutter" onsubmit="{ submit }">
+    <div class="uk-width-medium-1-3 uk-viewport-height-1-2 uk-container-center uk-text-center uk-flex uk-flex-center uk-flex-middle"
+            if="{ loading }">
+            <div class="uk-animation-fade uk-text-center">
+                <cp-preloader class="uk-container-center"></cp-preloader>
+            </div>
+        </div>
+    <form id="account-form" class="uk-form uk-grid uk-grid-gutter" onsubmit="{ submit }" show="{ !loading  }">
 
         <h3>@lang('Create new backup')</h3>
         <div class="uk-width-medium-1-1">
@@ -41,7 +47,7 @@
         var $this = this, $root = App.$(this.root);
 
         this.mixin(RiotBindMixin);
-
+        this.loading = false;
         this.description = "@lang('Manual backup created on') " + App.Utils.dateformat(new Date(), 'MMM DD, YYYY HH:mm');
         this.definitions = {{ json_encode($definitions) }};
 
@@ -71,13 +77,18 @@
 
         submit(e) {
             if(e) e.preventDefault();
-
+            this.loading = true;
+            this.update();
             App.request("/backup-and-restore/save", {"description": this.description, "options": this.options}).then(function(data){
                 $this.backup = data;
                 App.ui.notify("Backup created", "success");
                 setTimeout(function() {
+                    this.loading = false;
                   location.href = App.route('/backup-and-restore');
                 }, 1000)
+            },function(err){
+                this.loading = false;
+                App.ui.notify("Something went wrong.", "danger");
             });
 
             return false;

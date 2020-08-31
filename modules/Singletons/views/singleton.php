@@ -39,13 +39,14 @@
                        <div data-uk-dropdown="pos:'right-center', mode:'click'">
                            <a><img class="uk-display-block uk-margin uk-container-center" riot-src="{ singleton.icon ? '@url('assets:app/media/icons/')'+singleton.icon : '@url('singletons:icon.svg')'}" alt="icon" width="100"></a>
                            <div class="uk-dropdown uk-dropdown-scrollable uk-dropdown-width-2">
-                                <div class="uk-grid uk-grid-gutter">
+                                <div class="uk-grid uk-grid-gutter uk-flex-center">
                                     <div>
-                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon=""><img src="@url('singletons:icon.svg')" width="30" icon=""></a>
+                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon=""><img src="@url('singletons:icon.svg')" width="60" icon=""></a>
                                     </div>
-                                    @foreach($app->helper("fs")->ls('*.svg', 'assets:app/media/icons') as $icon)
+                                    @foreach($app->helper("fs")->ls('*.svg', 'assets:app/media/icons/user') as $icon)
                                     <div>
-                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon="{{ $icon->getFilename() }}"><img src="@url($icon->getRealPath())" width="30" icon="{{ $icon->getFilename() }}"></a>
+                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon="/user{{ $icon->getFilename() }}">
+                                            <img src="@url($icon->getRealPath())" width="60" icon="user{{ $icon->getFilename() }}"></a>
                                     </div>
                                     @endforeach
                                 </div>
