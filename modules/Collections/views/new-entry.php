@@ -32,11 +32,38 @@
         margin: 0px !important;
     }
     .uk-tab-content .desc{
-    background: #f0f8ff;
-    padding: 20px;
-    margin: 10px 0;
-    border-radius: 5px;
+        background: #f0f8ff;
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 5px;
+    }
+    .uk-scrollable-box {
+        border: none;
+        padding-top: 0;
+        padding-left: 0;
+    }
 
+    .collection-grid-avatar-container {
+        border-top: 1px rgba(0,0,0,0.1) solid;
+    }
+
+    .collection-grid-avatar {
+        transform: translateY(-50%);
+        max-width: 40px;
+        max-height: 40px;
+        border: 1px #fff solid;
+        box-shadow: 0 0 40px rgba(0,0,0,0.3);
+        border-radius: 50%;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    .collection-grid-avatar .uk-icon-spinner {
+        display: none;
+    }
+    .item-grid-avatar .uk-text-small {
+        font-size: 14px;
+        line-height: 16px;
     }
 </style>
 
@@ -95,7 +122,7 @@
                         <div class="uk-flex uk-flex-middle uk-text-bold">
                             <div class="uk-margin-small-right">
                                 <img src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="30" alt="icon">
-                                <span>@lang(entry._id ? 'Edit Entry':'Add Entry')</span>
+                                <span>{App.i18n.get(entry._id ? '{{$canEdit ? 'Edit Entry' : 'View'}}':'Add Entry')}</span>
                             </div>
                         </div>
                     </a></li>
@@ -117,7 +144,7 @@
                 <div class="uk-margin-small-right">
                     <img src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="40" alt="icon">
                 </div>
-                <div class="uk-margin-right">@lang(entry._id ? 'Edit Entry':'Add Entry')</div>
+                <div class="uk-margin-right">{App.i18n.get(entry._id ? '{{$canEdit ? 'Edit Entry' : 'View'}}':'Add Entry')}</div>
             </div>
             @endif
     </div>
@@ -129,7 +156,7 @@
     </div>
     <div class="uk-container uk-container-center uk-tab-main-contents">
         @foreach($linked as $name=>$meta)
-        <div class="uk-grid uk-tab-content" id="{{$name}}" show="{viewTab == '{{$name}}'}" >
+        <div class="uk-grid uk-tab-content" show="{viewTab == '{{$name}}'}" >
             <div class="uk-width-1-1 uk-flex uk-flex-middle uk-margin-top uk-text-bold uk-h3 uk-tab-content-title">
                 <div class="uk-margin-small-right">
                 @if(count($meta["@links"]) > 1)
@@ -163,8 +190,8 @@
         @endforeach
 
         <div help="Editeur" class="uk-grid uk-tab-content" show="{viewTab == 'my-entry'}">
+            @if($canEdit)
             <div class="uk-grid-margin uk-width-medium-3-4 uk-width-large-4-5">
-
                 <form class="uk-form" if="{ fields.length }" onsubmit="{ submit }">
 
                     <div class="uk-grid uk-grid-match uk-grid-gutter" if="{ !preview }">
@@ -208,7 +235,7 @@
                     <cp-actionbar>
                         <div class="uk-container uk-container-center">
                             <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                            <a class="uk-button uk-button-link" href="@route('/collections/entries/'.$collection['name'])">
+                            <a class="uk-button uk-button-link" onclick="history.back()">
                                 <span show="{ !entry._id }">@lang('Cancel')</span>
                                 <span show="{ entry._id }">@lang('Close')</span>
                             </a>
@@ -218,7 +245,6 @@
                 </form>
 
             </div>
-
             <div class="uk-width-medium-1-4  uk-width-large-1-5 uk-flex-order-first uk-flex-order-last-medium">
                 <div class="uk-margin" if="{entry._id}">
                     <div class="uk-margin-small-top">
@@ -291,7 +317,62 @@
                 @trigger('collections.entry.aside', [$collection['name'], $collection['name']])
 
             </div>
+            @else
+            <div class="uk-grid uk-grid-match uk-grid-width-1-1 uk-flex-center item-grid-avatar" style="align-items: center;align-content: center;text-align: center;margin: 20px auto;">
+                <div class="uk-panel uk-panel-box uk-panel-card uk-panel-card-hover">
 
+                    <div class="uk-position-relative uk-nbfc">
+                        <canvas width="400" height="250"></canvas>
+                        <div class="uk-position-cover uk-flex uk-flex-center uk-flex-middle">
+
+                        <cp-thumbnail src="{ isImageField(entry) }" width="400" height="250" if="{ isImageField(entry) }">
+                        </cp-thumbnail>
+
+                        <div class="uk-svg-adjust uk-text-primary" style="color:{ collection['color'] } !important;"
+                            if="{ !isImageField(entry) }">
+                            <img src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="80" alt="icon" data-uk-svg>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="collection-grid-avatar-container">
+                        <div class="collection-grid-avatar">
+                        <cp-account account="{entry._mby || entry._by}" label="{false}" size="40" if="{entry._mby || entry._by}">
+                        </cp-account>
+                        <cp-gravatar alt="?" size="40" if="{!(entry._mby || entry._by)}"></cp-gravatar>
+                        </div>
+                    </div>
+                    <div class="uk-flex uk-flex-middle uk-margin-small-top">
+
+                        <div class="uk-flex-item-1 uk-margin-small-right uk-text-small">
+                        <span class="uk-text-success uk-margin-small-right">{ App.Utils.dateformat( new Date(
+                            1000 * entry._created )) }</span>
+                        <span class="uk-text-primary">{ App.Utils.dateformat( new Date( 1000 * entry._modified
+                            )) }</span>
+                        </div>
+                    </div>
+
+                    <div class="uk-margin-top uk-scrollable-box">
+                        <div class="uk-margin-small-bottom" each="{field,idy in fields}"
+                        if="{ field.name != '_modified' && field.name != '_created' }">
+                        <span class="uk-text-small uk-text-uppercase uk-text-muted">{ field.label || field.name
+                            }</span>
+                        <a class="uk-link-muted uk-text-small uk-display-block uk-text-truncate">
+                            <raw content="{ App.Utils.renderValue(field.type, entry[field.name], field) }"
+                            if="{entry[field.name] !== undefined}"></raw>
+                            <span class="uk-icon-eye-slash uk-text-muted" if="{entry[field.name] === undefined}"></span>
+                        </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <cp-actionbar>
+                <div class="uk-container uk-container-center">
+                    <a class="uk-button uk-button-large uk-button-primary" onclick="history.back()">
+                        <span show="{ entry._id }">@lang('Close')</span>
+                    </a>
+                </div>
+            </cp-actionbar>
+            @endif
         </div>
     </div>
 
@@ -316,8 +397,10 @@
         this.languages    = App.$data.languages;
         this.groups       = {Main:[]};
         this.group        = '';
+        this.canEdit      = {{json_encode($canEdit)}};
         this.isOverflowing = false;
         window.entry = this;
+        $this.imageField = null;
         if (this.languages.length) {
             this.lang = App.session.get('collections.entry.'+this.collection._id+'.lang', '');
         }
@@ -326,7 +409,9 @@
         this.fields.forEach(function(field) {
 
             $this.fieldsidx[field.name] = field;
-
+            if (!$this.imageField && (field.type == 'image' || field.type == 'asset')) {
+                $this.imageField = field;
+            }
             if ($this.entry[field.name] === undefined) {
                 $this.entry[field.name] = field.options && field.options.default || null;
             }
@@ -375,20 +460,22 @@
                 Element.prototype.isOverflowing = function(){
                     return this.scrollHeight > this.clientHeight || this.scrollWidth > this.clientWidth;
                 }
-            // bind global command + save
-            Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
-                if ($this.viewTab != 'my-entry' || App.$('.uk-modal.uk-open').length) {
+            if(this.canEdit){
+                // bind global command + save
+                Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
+                    if ($this.viewTab != 'my-entry' || App.$('.uk-modal.uk-open').length) {
+                        return false;
+                    }
+
+                    $this.submit(e);
                     return false;
-                }
+                });
 
-                $this.submit(e);
-                return false;
-            });
-
-            // wysiwyg cmd + save hack
-            App.$(this.root).on('submit', function(e, component) {
-                if (component) $this.submit(e);
-            });
+                // wysiwyg cmd + save hack
+                App.$(this.root).on('submit', function(e, component) {
+                    if (component) $this.submit(e);
+                });
+            }
             @if($isEdit && count($linked))
             window.isOverflowing = this.isOverflowing = App.$("#tab-entry").get(0).isOverflowing();
             if(this.isOverflowing)
@@ -406,7 +493,7 @@
             // lock resource
             var idle = setInterval(function() {
 
-                if (!$this.entry._id) return;
+                if (!($this.entry._id && $this.canEdit)) return;
 
                 Cockpit.lockResource($this.entry._id, function(e){
                     window.location.href = App.route('/collections/entry/'+$this.collection.name+'/'+$this.entry._id);
@@ -575,6 +662,29 @@
             $this.refs.entrylinked.show($this.entry);
             $this.update();
             
+        }
+
+        isImageField(entry) {
+            if (!this.imageField) {
+                return false;
+            }
+            var data = entry[this.imageField.name];
+            if (!data) {
+                return false;
+            }
+            switch (this.imageField.type) {
+                case 'asset':
+                    if (data.mime && data.mime.match(/^image\//)) {
+                        return ASSETS_URL + data.path;
+                    }
+                    break;
+                case 'image':
+                    if (data.path) {
+                        return data.path.match(/^(http\:|https\:|\/\/)/) ? data.path : SITE_URL + '/' + data.path;
+                    }
+                    break;
+            }
+            return false;
         }
 
     </script>

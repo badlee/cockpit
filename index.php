@@ -14,7 +14,7 @@ define('COCKPIT_ADMIN', 1);
 date_default_timezone_set('UTC');
 
 // handle php webserver
-
+$_SERVER['REQUEST_URI'] = preg_replace("#\/+#","/",$_SERVER['REQUEST_URI']);
 if (PHP_SAPI == 'cli-server' && is_file(__DIR__.parse_url(urldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH))) {
     return false;
 }

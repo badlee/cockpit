@@ -221,6 +221,7 @@ class Admin extends \Cockpit\AuthController {
             return $this->helper('admin')->denyRequest();
         }
 
+        $canEdit = $this->app->module('collections')->hasaccess($collection, 'entries_edit');
         $collection    = $this->module('collections')->collection($collection);
         $entry         = new \ArrayObject([]);
         $excludeFields = [];
@@ -239,12 +240,12 @@ class Admin extends \Cockpit\AuthController {
             'icon' => '',
             'description' => ''
         ], $collection);
-
+        
+        
         $this->app->helper('admin')->favicon = [
             'path' => 'collections:icon.svg',
             'color' => $collection['color']
         ];
-
         if ($id) {
 
             $entry = $this->module('collections')->findOne($collection['name'], ['_id' => $id]);
@@ -253,12 +254,13 @@ class Admin extends \Cockpit\AuthController {
             if (!$entry) {
                 return cockpit()->helper('admin')->denyRequest();
             }
+            if($canEdit){
+                if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($id, $meta)) {
+                    return $this->render('collections:views/locked.php', compact('meta', 'collection', 'entry'));
+                }
 
-            if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($id, $meta)) {
-                return $this->render('collections:views/locked.php', compact('meta', 'collection', 'entry'));
+                $this->app->helper('admin')->lockResourceId($id);
             }
-
-            $this->app->helper('admin')->lockResourceId($id);
         }
 
         $context = _check_collection_rule($collection, 'read', ['options' => ['filter'=>[]]]);
@@ -272,7 +274,7 @@ class Admin extends \Cockpit\AuthController {
         if(isset($_REQUEST["old"])){
             $view = 'collections:views/entry.php';
         }else{
-            $_collections = $this->app->module('collections')->collections();
+            $_collections = $this->app->module('collections')->getCollectionsInGroup(null, false);
             foreach ($_collections as $name => $meta) {
                 if(isset($meta['fields']) && $meta['fields']){
                     foreach ($meta["fields"] as $field) {
@@ -281,7 +283,7 @@ class Admin extends \Cockpit\AuthController {
                             if(!isset($linked[$name])) {
                                 $linked[$name] = $meta;
                                 $linked[$name]["label"] = empty($meta["label"]) ? ucfirst($name) : $meta["label"];
-                                $linked[$name]["createEntry"] = $this->app->routeUrl('/collections/entry/'.$meta['name']);
+                                $linked[$name]["createEntryUrl"] = $this->app->routeUrl('/collections/entry/'.$meta['name']);
                                 $linked[$name]["canEdit"] = $this->app->module('collections')->hasaccess($name, 'entries_edit');
                                 $linked[$name]["canCreate"] = $this->app->module('collections')->hasaccess($name, 'entries_create');
                                 $linked[$name]["canDelete"] = $this->app->module('collections')->hasaccess($name, 'entries_delete');
@@ -304,9 +306,9 @@ class Admin extends \Cockpit\AuthController {
         if ($override = $this->app->path('#config:collections/'.$collection['name'].'/views/entry.php')) {
             $view = $override;
         }
-        $isEdit = isset($entry['_id']);
+        $isEdit = isset($entry['_id']) ;
         $isNew = !$isEdit;
-        return $this->render($view, compact('collection', 'entry', 'excludeFields','linked','isNew','isEdit'));
+        return $this->render($view, compact('collection', 'entry', 'excludeFields','linked','isNew','isEdit','canEdit'));
     }
 
     public function save_entry($collection) {

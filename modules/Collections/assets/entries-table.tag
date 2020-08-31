@@ -113,7 +113,7 @@
                                     <img src="{collection['icon']}" width="80" alt="icon" data-uk-svg>
                                 </div>
                             </div>
-                            <a class="uk-position-cover" onclick="{parent.editOrView}"></a>
+                            <a class="uk-position-cover" href="{collection.createEntryUrl}/{ entry._id }"></a>
                         </div>
                         <div class="collection-grid-avatar-container">
                             <div class="collection-grid-avatar">
@@ -139,10 +139,10 @@
                                     <ul class="uk-nav uk-nav-dropdown">
                                         <li class="uk-nav-header">{App.i18n.get('Actions')}</li>
                                         <li if="{collection.canEdit}"><a
-                                                onclick="{parent.editOrView}">{App.i18n.get('Edit')}</a>
+                                                href="{collection.createEntryUrl}/{ entry._id }">{App.i18n.get('Edit')}</a>
                                         </li>
                                         <li if="{!collection.canEdit}"><a
-                                                onclick="{parent.editOrView}">{App.i18n.get('View')}</a>
+                                                href="{collection.createEntryUrl}/{ entry._id }">{App.i18n.get('View')}</a>
                                         </li>
                                         <li if="{collection.canDelete}" class="uk-nav-item-danger"><a
                                                 class="uk-dropdown-close"
@@ -161,11 +161,11 @@
                                 <span class="uk-text-small uk-text-uppercase uk-text-muted">{ field.label || field.name
                                     }</span>
                                 <a class="uk-link-muted uk-text-small uk-display-block uk-text-truncate"
-                                    onclick="{parent.editOrView}">
-                                    <raw content="{ App.Utils.renderValue(field.type, parent.entry[field.name], field) }"
-                                        if="{parent.entry[field.name] !== undefined}"></raw>
+                                href="{collection.createEntryUrl}/{ entry._id }">
+                                    <raw content="{ App.Utils.renderValue(field.type, entry[field.name], field) }"
+                                        if="{entry[field.name] !== undefined}"></raw>
                                     <span class="uk-icon-eye-slash uk-text-muted"
-                                        if="{parent.entry[field.name] === undefined}"></span>
+                                        if="{entry[field.name] === undefined}"></span>
                                 </a>
                             </div>
                         </div>
@@ -199,11 +199,11 @@
                             <td><input class="uk-checkbox" type="checkbox" data-check data-id="{ entry._id }"></td>
                             <td class="uk-text-truncate" each="{field,idy in parent.fields}"
                                 if="{ field.name != '_modified' && field.name != '_created' }">
-                                <a class="uk-link-muted" onclick="{ parent.editOrView }">
-                                    <raw content="{ App.Utils.renderValue(field.type, parent.entry[field.name], field) }"
-                                        if="{parent.entry[field.name] !== undefined}"></raw>
+                                <a class="uk-link-muted" href="{collection.createEntryUrl}/{ entry._id }">
+                                    <raw content="{ App.Utils.renderValue(field.type, entry[field.name], field) }"
+                                        if="{entry[field.name] !== undefined}"></raw>
                                     <span class="uk-icon-eye-slash uk-text-muted"
-                                        if="{parent.entry[field.name] === undefined}"></span>
+                                        if="{entry[field.name] === undefined}"></span>
                                 </a>
                             </td>
                             <td><span class="uk-badge uk-badge-outline uk-text-muted">{ App.Utils.dateformat( new Date(
@@ -217,10 +217,10 @@
                                         <ul class="uk-nav uk-nav-dropdown">
                                             <li class="uk-nav-header">{App.i18n.get('Actions')}</li>
                                             <li if="{collection.canEdit}"><a
-                                                    onclick="{ parent.editOrView }">{App.i18n.get('Edit')}</a>
+                                                    href="{collection.createEntryUrl}/{ entry._id }">{App.i18n.get('Edit')}</a>
                                             </li>
                                             <li if="{!collection.canEdit}"><a
-                                                    onclick="{ parent.editOrView }">{App.i18n.get('View')}</a>
+                                                    href="{collection.createEntryUrl}/{ entry._id }">{App.i18n.get('View')}</a>
                                             </li>
                                             <li if="{collection.canDelete}" class="uk-nav-item-danger"><a
                                                     class="uk-dropdown-close"
@@ -400,8 +400,11 @@
             $filterEntry = {};
             $filterEntry[$this.selectedLink.name + "._id"] = this.entry._id;
             options.filter["$and"].push($filterEntry);
-            if (this.filter) {
+            if (this.filter && Object.keys(this.filter).length) {
                 options.filter["$and"].push(this.filter);
+            }
+            if(options.filter["$and"].length == 1){
+                options.filter = options.filter["$and"][0];
             }
 
             if (this.limit) {
