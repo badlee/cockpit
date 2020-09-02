@@ -14,6 +14,8 @@ class Utils extends \Cockpit\AuthController {
 
     public function thumb_url() {
 
+        \session_write_close(); // improve concurrency loading
+
         $options = [
             'src' => $this->param('src', false),
             'fp' => $this->param('fp', null),
@@ -25,6 +27,7 @@ class Utils extends \Cockpit\AuthController {
             'rebuild' => intval($this->param('r', false)),
             'base64' => intval($this->param('b64', false)),
             'output' => intval($this->param('o', false)),
+            'redirect' => intval($this->param('re', false)),
         ];
 
         // Set single filter when available
@@ -41,8 +44,33 @@ class Utils extends \Cockpit\AuthController {
         return $this->module('cockpit')->thumbnail($options);
     }
 
+    public function getCacheSize() {
+        
+        \session_write_close();
+
+        $size = 0;
+        $dirs = ['#cache:','#tmp:','#thumbs:', '#pstorage:tmp'];
+
+        foreach ($dirs as &$dir) {
+            $dir = $this->app->path($dir);
+        }
+
+        foreach (array_unique($dirs) as $dir) {
+            $size += $this->app->helper("fs")->getDirSize($dir);
+        }
+
+        $ret = [
+            'size' => $size,
+            'size_pretty' => $this->app->helper('utils')->formatSize($size)
+        ];
+
+        return $ret;
+    }
+
 
     public function revisionsCount() {
+
+        \session_write_close();
 
         if ($id = $this->param('id')) {
             $cnt = $this->app->helper('revisions')->count($id);
@@ -84,13 +112,85 @@ class Utils extends \Cockpit\AuthController {
     }
 
     public function lockResourceId($resourceId) {
+
+        $lockedMeta = $this->app->helper('admin')->isResourceLocked($resourceId);
+
+        if ($lockedMeta) {
+
+            if ($lockedMeta['sid'] !== md5(session_id())) {
+                $this->stop(412);
+            }
+        }
+
         $meta = $this->app->helper('admin')->lockResourceId($resourceId);
+        
         return $meta;
     }
 
     public function unlockResourceId($resourceId) {
-        $this->app->helper('admin')->unlockResourceId($resourceId);
 
-        return ['success' => true];
+        $meta = $this->app->helper('admin')->isResourceLocked($resourceId);
+        $success = false;
+
+        if ($meta) {
+
+            $canUnlock = $this->module('cockpit')->hasaccess('cockpit', 'unlockresources');
+
+            if (!$canUnlock) {
+                $canUnlock = $meta['sid'] == md5(session_id()) || $this->app->module('cockpit')->isSuperAdmin();
+            }
+
+            if ($canUnlock) {
+                $this->app->helper('admin')->unlockResourceId($resourceId);
+                $success = true;
+            }
+        }
+
+        return ['success' => $success];
+    }
+
+    public function unlockResourceIdByCurrentUser($resourceId) {
+
+        $meta = $this->app->helper('admin')->isResourceLocked($resourceId);
+        $success = false;
+
+        if ($meta) {
+
+            $canUnlock = $meta['sid'] == md5(session_id());
+
+            if ($canUnlock) {
+                $this->app->helper('admin')->unlockResourceId($resourceId);
+                $success = true;
+            }
+        }
+
+        return ['success' => $success];
+    }
+
+    public function startJobRunner() {
+
+        \session_write_close();
+
+        $this->app->helper('async')->exec("cockpit()->helper('jobs')->stopRunner();cockpit()->helper('jobs')->run();");
+        sleep(3);
+        return ['running' => $this->app->helper('jobs')->isRunnerActive()];
+    }
+
+    public function restartJobRunner() {
+
+        \session_write_close();
+
+        $this->app->helper('async')->exec("cockpit()->helper('jobs')->stopRunner();cockpit()->helper('jobs')->run();");
+        sleep(3);
+        return ['running' => $this->app->helper('jobs')->isRunnerActive()];
+    }
+
+    public function stopJobRunner() {
+
+        \session_write_close();
+        
+        $this->app->helper('async')->exec("cockpit()->helper('jobs')->stopRunner();");
+        sleep(3);
+        return ['running' => $this->app->helper('jobs')->isRunnerActive()];
     }
 }

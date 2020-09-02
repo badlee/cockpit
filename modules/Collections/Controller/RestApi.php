@@ -16,7 +16,14 @@ class RestApi extends \LimeExtra\Controller {
         $this->app->response->mime = 'json';
     }
 
-    public function get($collection=null) {
+    /**
+     * Deprecated! use /entries instead
+     */
+    public function get($collection = null) {
+        return $this->entries($collection);
+    }
+
+    public function entries($collection = null) {
 
         if (!$collection) {
             return $this->stop('{"error": "Missing collection name"}', 412);
@@ -39,45 +46,45 @@ class RestApi extends \LimeExtra\Controller {
         $options = [];
 
         if ($filter   = $this->param('filter', null))   $options['filter'] = $filter;
-        if ($limit    = $this->param('limit', null))    $options['limit'] = intval($limit);
+        if ($limit    = $this->param('limit', null))    $options['limit'] = \intval($limit);
         if ($sort     = $this->param('sort', null))     $options['sort'] = $sort;
         if ($fields   = $this->param('fields', null))   $options['fields'] = $fields;
-        if ($skip     = $this->param('skip', null))     $options['skip'] = intval($skip);
+        if ($skip     = $this->param('skip', null))     $options['skip'] = \intval($skip);
         if ($populate = $this->param('populate', null)) $options['populate'] = $populate;
 
         // cast string values if get request
-        if ($filter && isset($_GET['filter'])) $options['filter'] = $this->app->helper('utils')->fixStringBooleanValues($filter);
-        if ($fields && isset($_GET['fields'])) $options['fields'] = $this->app->helper('utils')->fixStringNumericValues($fields);
+        if ($filter && isset($this->app->request->query['filter'])) $options['filter'] = $this->app->helper('utils')->fixStringBooleanValues($filter);
+        if ($fields && isset($this->app->request->query['fields'])) $options['fields'] = $this->app->helper('utils')->fixStringNumericValues($fields);
 
         // fields filter
         if ($fieldsFilter = $this->param('fieldsFilter', [])) $options['fieldsFilter'] = $fieldsFilter;
         if ($lang = $this->param('lang', false)) $fieldsFilter['lang'] = $lang;
-        if ($ignoreDefaultFallback = $this->param('ignoreDefaultFallback', false)) $fieldsFilter['ignoreDefaultFallback'] = in_array($ignoreDefaultFallback, ['1', '0']) ? boolval($ignoreDefaultFallback) : $ignoreDefaultFallback;
+        if ($ignoreDefaultFallback = $this->param('ignoreDefaultFallback', false)) $fieldsFilter['ignoreDefaultFallback'] = \in_array($ignoreDefaultFallback, ['1', '0']) ? \boolval($ignoreDefaultFallback) : $ignoreDefaultFallback;
         if ($user) $fieldsFilter['user'] = $user;
 
-        if (is_array($fieldsFilter) && count($fieldsFilter)) {
+        if (\is_array($fieldsFilter) && \count($fieldsFilter)) {
             $options['fieldsFilter'] = $fieldsFilter;
         }
 
         if ($sort) {
 
             foreach ($sort as $key => &$value) {
-                $options['sort'][$key]= intval($value);
+                $options['sort'][$key]= \intval($value);
             }
         }
 
         $entries = $this->module('collections')->find($collection['name'], $options);
-        $count = count($entries);
+        $count = \count($entries);
         $isSortable = $collection['sortable'] ?? false;
 
         // sort by custom order if collection is sortable
-        if (!$sort && !$filter && $isSortable && $count) {
+        if (!$sort && !$filter && $isSortable && !$limit && $count) {
 
             $entries = $this->helper('utils')->buildTree($entries, [
                 'parent_id_column_name' => '_pid',
                 'children_key_name'     => 'children',
                 'id_column_name'        => '_id',
-    			'sort_column_name'      => '_o'
+                'sort_column_name'      => '_o'
             ]);
         }
 
@@ -92,8 +99,8 @@ class RestApi extends \LimeExtra\Controller {
 
             if (
                 $user && isset($field['acl']) &&
-                is_array($field['acl']) && count($field['acl']) &&
-                !(in_array($user['_id'] , $field['acl']) || in_array($user['group'] , $field['acl']))
+                \is_array($field['acl']) && \count($field['acl']) &&
+                !(\in_array($user['_id'] , $field['acl']) || \in_array($user['group'] , $field['acl']))
             ) {
                 continue;
             }
@@ -114,7 +121,61 @@ class RestApi extends \LimeExtra\Controller {
 
     }
 
-    public function save($collection=null) {
+    public function entry($collection = null, $id = null) {
+
+        if (!$collection) {
+            return $this->stop('{"error": "Missing collection name"}', 412);
+        }
+
+        if (!$this->module('collections')->exists($collection)) {
+            return $this->stop('{"error": "Collection not found"}', 412);
+        }
+
+        if (!$id && !$this->param('filter')) {
+            return $this->stop('{"error": "Missing id parameter"}', 412);
+        }
+
+        $collection = $this->module('collections')->collection($collection);
+        $user = $this->module('cockpit')->getUser();
+
+        if ($user) {
+
+            if (!$this->module('collections')->hasaccess($collection['name'], 'entries_view')) {
+                return $this->stop('{"error": "Unauthorized"}', 401);
+            }
+        }
+
+        $filter = $this->param('filter');
+
+        if (!$filter) {
+            $filter = ['_id' => $id];
+        }
+
+        $options = [];
+
+        if ($fields   = $this->param('fields', null))   $options['fields'] = $fields;
+        if ($populate = $this->param('populate', null)) $options['populate'] = $populate;
+
+        // fields filter
+        if ($fieldsFilter = $this->param('fieldsFilter', [])) $options['fieldsFilter'] = $fieldsFilter;
+        if ($lang = $this->param('lang', false)) $fieldsFilter['lang'] = $lang;
+        if ($ignoreDefaultFallback = $this->param('ignoreDefaultFallback', false)) $fieldsFilter['ignoreDefaultFallback'] = \in_array($ignoreDefaultFallback, ['1', '0']) ? \boolval($ignoreDefaultFallback) : $ignoreDefaultFallback;
+        if ($user) $fieldsFilter['user'] = $user;
+
+        if (\is_array($fieldsFilter) && \count($fieldsFilter)) {
+            $options['fieldsFilter'] = $fieldsFilter;
+        }
+
+        $entry = $this->module('collections')->findOne($collection['name'], $filter, $options['fields'] ?? null, $options['populate'] ?? false, $options['fieldsFilter'] ?? []);
+
+        if (!$entry) {
+            return $this->stop('{"error": "Entry not found."}', 404);
+        }
+
+        return $entry;
+    }
+
+    public function save($collection = null) {
 
         $user = $this->module('cockpit')->getUser();
         $data = $this->param('data', null);
@@ -143,12 +204,16 @@ class RestApi extends \LimeExtra\Controller {
             $data['_by'] = $userId;
         }
 
-        $data = $this->module('collections')->save($collection, $data);
+        $options = [];
+
+        if ($revision = $this->param('revision', null)) $options['revision'] = $this->app->helper('utils')->fixStringBooleanValues($revision);
+
+        $data = $this->module('collections')->save($collection, $data, $options); 
 
         return $data;
     }
 
-    public function remove($collection=null) {
+    public function remove($collection = null) {
 
         $user   = $this->module('cockpit')->getUser();
         $filter = $this->param('filter', null);
@@ -159,7 +224,7 @@ class RestApi extends \LimeExtra\Controller {
         }
 
         // handele single item cases
-        if (is_string($filter)) {
+        if (\is_string($filter)) {
             $filter = ['_id' => $filter];
         } elseif (isset($filter['_id'])) {
             $filter = ['_id' => $filter['_id']];
@@ -248,6 +313,6 @@ class RestApi extends \LimeExtra\Controller {
             $collections = $this->module('collections')->collections($extended);
         }
 
-        return $extended ? $collections : array_keys($collections);
+        return $extended ? $collections : \array_keys($collections);
     }
 }

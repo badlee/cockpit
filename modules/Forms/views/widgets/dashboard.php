@@ -2,7 +2,7 @@
 
     <div class="uk-panel-box uk-panel-card">
 
-        <div class="uk-panel-box-header uk-flex">
+        <div class="uk-panel-box-header uk-flex uk-flex-middle">
             <strong class="uk-panel-box-header-title uk-flex-item-1">
                 @lang('Forms')
 
@@ -23,11 +23,11 @@
                 <ul class="uk-list uk-list-space uk-margin-top">
                     @foreach(array_slice($forms, 0, count($forms) > 5 ? 5: count($forms)) as $form)
                     <li class="uk-text-truncate">
-                        <a href="@route('/forms/entries/'.$form['name'])">
+                        <a class="uk-link-muted" href="@route('/forms/entries/'.$form['name'])">
 
                             <img class="uk-margin-small-right uk-svg-adjust" src="@url(isset($form['icon']) && $form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="18px" alt="icon" data-uk-svg>
 
-                            {{ htmlspecialchars(@$form['label'] ? $form['label'] : $form['name']) }}
+                            {{ htmlspecialchars(@$form['label'] ? $form['label'] : $form['name'], ENT_QUOTES, 'UTF-8') }}
                         </a>
                     </li>
                     @endforeach

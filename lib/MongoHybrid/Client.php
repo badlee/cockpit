@@ -17,15 +17,13 @@ class Client {
 
     public function __construct($server, $options=[], $driverOptions=[]) {
 
-        if (strpos($server, 'mongodb://')===0) {
+        if (strpos($server, 'mongodb://')===0 || strpos($server, 'mongodb+srv://')===0) {
 
-            $cls = class_exists('\MongoClient') ? 'MongoHybrid\\MongoLegacy':'MongoHybrid\\Mongo';
-
-            $this->driver = new $cls($server, $options, $driverOptions);
+            $this->driver = new Mongo($server, $options, $driverOptions);
             $this->type = 'mongodb';
         }
 
-        if (strpos($server, 'mongolite://')===0) {
+        if (strpos($server, 'mongolite://') === 0) {
             $this->driver = new MongoLite($server, $options);
             $this->type = 'mongolite';
         }
@@ -35,9 +33,8 @@ class Client {
         return $this->driver->getCollection($name, $db)->drop();
     }
 
-    public function renameCollection($newname, $db = null) {
-
-        return $this->driver->getCollection($name, $db)->renameCollection($newname);
+    public function renameCollection($name, $newname, $db = null) {
+        return $this->driver->renameCollection($name, $newname, $db);
     }
 
     public function save($collection, &$data) {

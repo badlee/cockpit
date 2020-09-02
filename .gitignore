@@ -5,6 +5,7 @@
 .project
 .settings
 .idea
+.vscode
 .env
 composer.lock
 package-lock.json
@@ -27,3 +28,6 @@ addons/
 !/storage/*/index.html
 !/storage/*/.htaccess
 defines.php
+# Sublime Text
+*.sublime-workspace
+*.sublime-project

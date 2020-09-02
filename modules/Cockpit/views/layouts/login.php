@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="{{ $app('i18n')->locale }}" class="uk-height-1-1" data-base="@base('/')" data-route="@route('/')" data-locale="{{ $app('i18n')->locale }}">
+<html lang="{{ $app('i18n')->locale }}" class="uk-height-1-1 app-page-login" data-base="@base('/')" data-route="@route('/')" data-locale="{{ $app('i18n')->locale }}">
 <head>
     <meta charset="UTF-8">
     <title>@lang('Authenticate Please!')</title>
     <link rel="icon" href="@base('/favicon.png')" type="image/png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
 
         .login-container {
-            width: 420px;
+            width: 480px;
             max-width: 90%;
         }
 
@@ -18,16 +18,11 @@
         }
 
         .login-image {
-            background-image: url(@url('assets:app/media/logo.svg'));
+            background-image: url(@url('assets:app/media/logo-plain.svg'));
             background-repeat: no-repeat;
             background-size: contain;
             background-position: 50% 50%;
             height: 80px;
-        }
-
-        .uk-panel-box-header {
-            background-color: #fafafa;
-            border-bottom: none;
         }
 
         svg path,
@@ -38,8 +33,8 @@
 
     </style>
 
-    {{ $app->assets($app['app.assets.base'], $app['cockpit/version']) }}
-    {{ $app->assets(['assets:lib/uikit/js/components/form-password.min.js'], $app['cockpit/version']) }}
+    {{ $app->assets($app['app.assets.base'], $app['debug'] ? time() : $app['cockpit/version']) }}
+    {{ $app->assets(['assets:lib/uikit/js/components/form-password.min.js'], $app['debug'] ? time() : $app['cockpit/version']) }}
 
 
     @trigger('app.login.header')
@@ -47,23 +42,25 @@
 </head>
 <body class="login-page uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
 
-    <div class="uk-position-relative login-container uk-animation-scale uk-container-vertical-center" riot-view>
+    <div class="uk-position-relative login-container uk-animation-scale uk-container-vertical-center" role="main" riot-view>
 
         <form class="uk-form" method="post" action="@route('/auth/check')" onsubmit="{ submit }">
 
-            <div class="uk-panel-box uk-panel-space uk-panel-card uk-nbfc uk-text-center uk-animation-slide-bottom" if="{$user}">
-
-                <h2 class="uk-text-bold uk-text-truncate">@lang('Welcome back!')</h2>
+            <div class="uk-panel-space uk-nbfc uk-text-center uk-animation-slide-bottom" if="{$user}">
 
                 <p>
                     <cp-gravatar email="{ $user.email }" size="80" alt="{ $user.name || $user.user }" if="{$user}"></cp-gravatar>
+                </p>
+                <hr class="uk-width-1-2 uk-container-center">
+                <p class="uk-text-center uk-text-bold uk-text-muted uk-text-upper uk-margin-top">
+                    @lang('Welcome back!')
                 </p>
 
             </div>
 
             <div id="login-dialog" class="login-dialog uk-panel-box uk-panel-space uk-nbfc" show="{!$user}">
 
-                <div name="header" class="uk-panel-box-header uk-text-bold uk-text-center">
+                <div name="header" class="uk-panel-space uk-text-bold uk-text-center">
 
                     <div class="uk-margin login-image"></div>
 
@@ -75,12 +72,14 @@
                 </div>
 
                 <div class="uk-form-row">
-                    <input ref="user" class="uk-form-large uk-width-1-1" type="text" placeholder="@lang('Username')" autofocus required>
+                    <label class="uk-text-small uk-text-bold uk-text-upper uk-margin-small-bottom">@lang('Username')</label>
+                    <input ref="user" class="uk-form-large uk-width-1-1" type="text" aria-label="@lang('Username')" placeholder="" autofocus required>
                 </div>
 
                 <div class="uk-form-row">
                     <div class="uk-form-password uk-width-1-1">
-                        <input ref="password" class="uk-form-large uk-width-1-1" type="password" placeholder="@lang('Password')" required>
+                        <label class="uk-text-small uk-text-bold uk-text-upper uk-margin-small-bottom">@lang('Password')</label>
+                        <input ref="password" class="uk-form-large uk-width-1-1" type="password" aria-label="@lang('Password')" placeholder="" required>
                         <a href="#" class="uk-form-password-toggle" data-uk-form-password>@lang('Show')</a>
                     </div>
                 </div>
@@ -103,20 +102,25 @@
             this.error = false;
             this.$user  = null;
 
+            var redirectTo = '{{ htmlspecialchars($redirectTo, ENT_QUOTES, 'UTF-8') }}';
+
             submit(e) {
 
                 e.preventDefault();
 
                 this.error = false;
 
-                App.request('/auth/check', {"auth":{"user":this.refs.user.value, "password":this.refs.password.value}}).then(function(data){
+                App.request('/auth/check', {
+                    auth : {user:this.refs.user.value, password:this.refs.password.value },
+                    csfr : "{{ $app('csfr')->token('login') }}"
+                }).then(function(data) {
 
                     if (data && data.success) {
 
                         this.$user = data.user;
 
                         setTimeout(function(){
-                            App.reroute('/');
+                            App.reroute(redirectTo);
                         }, 2000)
 
                     } else {

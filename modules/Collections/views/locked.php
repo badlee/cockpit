@@ -8,7 +8,7 @@
     <ul class="uk-breadcrumb">
         <li><a href="@route('/collections')">@lang('Collections')</a></li>
         <li data-uk-dropdown="mode:'hover', delay:300">
-            <a href="@route('/collections/entries/'.$collection['name'])"><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$collection['label'] ? $collection['label']:$collection['name']) }}</a>
+            <a href="@route('/collections/entries/'.$collection['name'])"><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$collection['label'] ? $collection['label']:$collection['name'], ENT_QUOTES, 'UTF-8') }}</a>
 
             @if($app->module('collections')->hasaccess($collection['name'], 'collection_edit'))
             <div class="uk-dropdown">
@@ -36,13 +36,15 @@
             <strong class="uk-text-uppercase uk-text-small">@lang('Current editor')</strong>
             <div class="uk-margin-top uk-flex">
                 <div>
-                    <cp-gravatar size="30" alt="<?=($meta['user']['name'] ? $meta['user']['name'] : $meta['user']['user'])?>"></cp-gravatar>
+                    <cp-gravatar size="40" alt="<?=($meta['user']['name'] ? $meta['user']['name'] : $meta['user']['user'])?>"></cp-gravatar>
                 </div>
                 <div class="uk-margin-left">
                     <span><?=($meta['user']['name'] ? $meta['user']['name'] : $meta['user']['user'])?></span><br />
                     <span class="uk-text-muted"><?=($meta['user']['email'])?></span>
                 </div>
             </div>
+
+            @render('cockpit:views/_partials/unlock.php', ['resourceId' => $meta['rid']])
         </div>
 
 

@@ -31,7 +31,7 @@ class Controller extends \Lime\AppAware {
      * @return string
      */
     public function index() {
-        return "Please implement the index action";
+        return 'Please implement the index action';
     }
 
     /**
@@ -57,7 +57,7 @@ class Controller extends \Lime\AppAware {
      * @return Mixed
      */
     protected function param($key, $default=null) {
-        return $this->app->param($key, $default);
+        return $this->app->request->param($key, $default);
     }
 
     /**

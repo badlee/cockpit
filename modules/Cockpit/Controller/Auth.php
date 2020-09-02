@@ -17,6 +17,16 @@ class Auth extends \LimeExtra\Controller {
 
         if ($data = $this->param('auth')) {
 
+            if (isset($data['user']) && $this->app->helper('utils')->isEmail($data['user'])) {
+                $data['email'] = $data['user'];
+                $data['user']  = '';
+            }
+
+            if (!$this->app->helper('csfr')->isValid('login', $this->param('csfr'), true)) {
+                $this->app->trigger('cockpit.authentication.failed', [$data, 'Csfr validation failed']);
+                return ['success' => false, 'error' => 'Csfr validation failed'];
+            }
+
             $user = $this->module('cockpit')->authenticate($data);
 
             if ($user && !$this->module('cockpit')->hasaccess('cockpit', 'backend', @$user['group'])) {
@@ -24,15 +34,18 @@ class Auth extends \LimeExtra\Controller {
             }
 
             if ($user) {
-                $this->app->trigger('cockpit.account.login', [&$user]);
+                $this->app->trigger('cockpit.authentication.success', [&$user]);
                 $this->module('cockpit')->setUser($user);
+            } else {
+                $this->app->trigger('cockpit.authentication.failed', [$data, 'User not found']);
             }
 
-            if ($this->req_is('ajax')) {
-                return $user ? json_encode(['success' => true, 'user' => $user, 'avatar'=> md5($user['email'])]) : '{"success": false}';
+            if ($this->app->request->is('ajax')) {
+                return $user ? ['success' => true, 'user' => $user, 'avatar'=> md5($user['email'])] : ['success' => false, 'error' => 'User not found'];
             } else {
                 $this->reroute('/');
             }
+
         }
 
         return false;
@@ -41,15 +54,21 @@ class Auth extends \LimeExtra\Controller {
 
     public function login() {
 
-        return $this->render('cockpit:views/layouts/login.php');
+        $redirectTo = '/';
+
+        if ($this->param('to') && \substr($this->param('to'), 0, 1) == '/') {
+            $redirectTo = $this->param('to');
+        }
+
+        return $this->render('cockpit:views/layouts/login.php', compact('redirectTo'));
     }
 
     public function logout() {
 
         $this->module('cockpit')->logout();
 
-        if ($this->req_is('ajax')) {
-            return '{"logout":1}';
+        if ($this->app->request->is('ajax')) {
+            return ['logout' => true];
         } else {
             $this->reroute('/auth/login?logout=1');
         }
@@ -78,7 +97,7 @@ class Auth extends \LimeExtra\Controller {
                 return $this->stop(['error' => $this('i18n')->get('User does not exist')], 404);
             }
 
-            $token  = uniqid('rp-').'-'.time();
+            $token  = uniqid('rp-'.bin2hex(random_bytes(16)));
             $target = $this->app->param('', $this->app->getSiteUrl(true).'/auth/newpassword');
             $data   = ['_id' => $user['_id'], '_reset_token' => $token];
 

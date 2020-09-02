@@ -10,7 +10,7 @@
         <li><a href="@route('/forms')">@lang('Forms')</a></li>
         <li class="uk-active" data-uk-dropdown>
 
-            <a><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$form['label'] ? $form['label']:$form['name']) }}</a>
+            <a><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$form['label'] ? $form['label']:$form['name'], ENT_QUOTES, 'UTF-8') }}</a>
 
             <div class="uk-dropdown">
                 <ul class="uk-nav uk-nav-dropdown">
@@ -33,7 +33,7 @@
         <img class="uk-svg-adjust" src="@url($form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="50" alt="icon" data-uk-svg>
         @if($form['description'])
         <div class="uk-container-center uk-margin-top uk-width-medium-1-2">
-            {{ htmlspecialchars($form['description']) }}
+            {{ htmlspecialchars($form['description'], ENT_QUOTES, 'UTF-8') }}
         </div>
         @endif
     </div>
@@ -57,7 +57,7 @@
                 <img class="uk-svg-adjust" src="@url($form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="50" alt="icon" data-uk-svg>
                 @if($form['description'])
                 <div class="uk-margin-top uk-text-small">
-                    {{ htmlspecialchars($form['description']) }}
+                    {{ htmlspecialchars($form['description'], ENT_QUOTES, 'UTF-8') }}
                 </div>
                 @endif
                 <hr>
@@ -67,19 +67,26 @@
 
         </div>
 
-        <div class="uk-clearfix uk-margin-large-top" if="{ entries.length }">
+        <div class="uk-clearfix uk-margin-top uk-flex uk-flex-middle" show="{!loading && entries.length}">
 
-            <div class="uk-float-right uk-animation-fade" if="{ selected.length }">
+            <div class="uk-flex-item-1 uk-flex uk-flex-middle uk-h3">
+                <div class="uk-margin-small-right"><img src="@url($form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="40" alt="icon"></div>
+                <strong class="uk-margin-small-right">{{ htmlspecialchars(@$form['label'] ? $form['label']:$form['name'], ENT_QUOTES, 'UTF-8') }}</strong> 
+                @lang('Entries')
+            </div>
 
-                <a class="uk-button uk-button-large uk-button-danger" onclick="{ removeselected }">
-                    @lang('Delete') <span class="uk-badge uk-badge-contrast uk-margin-small-left">{ selected.length }</span>
+            <div class="uk-animation-fade" if="{ selected.length }">
+
+                <a class="uk-button uk-button-large uk-button-danger uk-flex-inline uk-flex-middle" onclick="{ removeselected }">
+                    @lang('Delete')
+                    <span class="uk-badge uk-badge-contrast uk-margin-small-left uk-margin-left">{ selected.length }</span>
                 </a>
 
             </div>
 
         </div>
 
-        <table class="uk-table uk-table-border uk-table-striped uk-margin-top" if="{ entries.length }">
+        <table class="uk-table uk-table-tabbed uk-table-striped uk-margin-large-top" if="{ entries.length }">
             <thead>
                 <tr>
                     <th width="20"><input class="uk-checkbox" type="checkbox" data-check="all"></th>
@@ -100,7 +107,7 @@
                         </div>
                     </td>
                     <td>
-                        <span class="uk-text-muted">{ App.Utils.dateformat( new Date( 1000 * entry._modified )) }</span>
+                        <span class="uk-badge uk-badge-outline uk-text-muted">{ App.Utils.dateformat( new Date( 1000 * entry._modified )) }</span>
                     </td>
                     <td>
                         <a class="uk-text-danger" onclick="{ parent.remove }" title="@lang('Delete')"><i class="uk-icon-trash-o"></i></a>
@@ -162,7 +169,6 @@
 
         this.ready      = false;
         this.form       = {{ json_encode($form) }};
-        this.loadmore   = false;
         this.count      = 0;
         this.page       = 1;
         this.limit      = 20;
@@ -260,7 +266,7 @@
         load() {
 
             var options = {
-                sort: {'_created': -1},
+                sort: {_created: -1},
                 limit: this.limit,
                 skip: (this.page - 1) * this.limit
             };
@@ -279,10 +285,7 @@
                 this.page    = data.page;
                 this.count   = data.count;
 
-                this.loadmore = data.entries.length && data.entries.length == this.limit;
-
                 this.checkselected();
-
                 this.update();
 
             }.bind(this))

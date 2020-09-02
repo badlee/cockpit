@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="{{ $app('i18n')->locale }}" class="uk-height-1-1" data-base="@base('/')" data-route="@route('/')" data-locale="{{ $app('i18n')->locale }}">
+<html lang="{{ $app('i18n')->locale }}" class="uk-height-1-1 app-page-newpassword" data-base="@base('/')" data-route="@route('/')" data-locale="{{ $app('i18n')->locale }}">
 <head>
     <meta charset="UTF-8">
     <title>@lang('Password Reset!')</title>
     <link rel="icon" href="@base('/favicon.png')" type="image/png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     {{ $app->assets($app['app.assets.base'], $app['cockpit/version']) }}
     {{ $app->assets(['assets:lib/uikit/js/components/form-password.min.js'], $app['cockpit/version']) }}

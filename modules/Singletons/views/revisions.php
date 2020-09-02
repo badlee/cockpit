@@ -8,6 +8,8 @@
 <script>
 
   window.__revisions = {{ json_encode($revisions) }};
+  window.__singleton = {{ json_encode($singleton) }};
+  window.__singletonData = {{ json_encode($data) }};
 
 </script>
 
@@ -15,7 +17,7 @@
     <ul class="uk-breadcrumb">
         <li><a href="@route('/singletons')">@lang('Singletons')</a></li>
         <li data-uk-dropdown="mode:'hover', delay:300">
-            <a href="@route('/singletons/form/'.$singleton['name'])"><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$singleton['label'] ? $singleton['label']:$singleton['name']) }}</a>
+            <a href="@route('/singletons/form/'.$singleton['name'])"><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$singleton['label'] ? $singleton['label']:$singleton['name'], ENT_QUOTES, 'UTF-8') }}</a>
 
             @if($app->module('singletons')->hasaccess($singleton['name'], 'edit'))
             <div class="uk-dropdown">
@@ -45,7 +47,7 @@
 
     <div class="uk-grid" if="{revisions.length}">
 
-        <div class="uk-width-3-4">
+        <div class="uk-width-4-5">
 
             <div class="uk-text-muted uk-width-medium-1-3 uk-viewport-height-1-3 uk-container-center uk-text-center uk-flex uk-flex-center uk-flex-middle" if="{!active}">
                 <div>
@@ -112,7 +114,7 @@
 
         </div>
 
-        <div class="uk-width-1-4">
+        <div class="uk-width-1-5">
 
             <h3 class="uk-text-bold uk-flex">
                 <span class="uk-flex-item-1">@lang('Revisions')</span>
@@ -121,12 +123,16 @@
 
             <div class="uk-margin revisions-box { revisions.length > 10 && 'uk-scrollable-box'}">
                 <ul class="uk-nav">
-                    <li class="uk-flex {rev == active && 'uk-active'}" each="{rev,idx in revisions}">
-                        <a class="uk-flex-item-1 uk-margin-small-right {rev !== active && 'uk-text-muted'}" onclick="{ parent.selectRevision }">
-                            { App.Utils.dateformat(rev._created*1000, 'MMMM Do YYYY') }<br>
-                            <span class="uk-text-small">{ App.Utils.dateformat(rev._created*1000, 'hh:mm:ss a') }</span>
-                        </a>
-                        <a show="{rev==active}" onclick="{remove}"><i class="uk-text-danger uk-icon-trash-o"></i></a>
+                    <li class="uk-margin-small-bottom {rev == active && 'uk-active uk-text-large'}" each="{rev,idx in revisions}">
+                        <hr show="{rev==active}">
+                        <div class="uk-flex">
+                            <a class="uk-flex-item-1 uk-margin-small-right {rev !== active && 'uk-text-muted'}" onclick="{ parent.selectRevision }">
+                                { App.Utils.dateformat(rev._created*1000, 'MMMM Do YYYY') }<br>
+                                <span class="uk-text-small">{ App.Utils.dateformat(rev._created*1000, 'hh:mm:ss a') }</span>
+                            </a>
+                            <a show="{rev==active}" onclick="{remove}"><i class="uk-icon-button uk-icon-button-danger uk-icon-trash-o"></i></a>
+                        </div>
+                        <hr show="{rev==active}">
                     </li>
                 </ul>
             </div>
@@ -140,9 +146,9 @@
 
         var $this = this;
 
-        this.singleton  = {{ json_encode($singleton) }};
+        this.singleton  = window.__singleton;
         this.revisions  = window.__revisions;
-        this.current    = {{ json_encode($data) }};
+        this.current    = window.__singletonData;
 
         this.showOnlyChanged = true;
 

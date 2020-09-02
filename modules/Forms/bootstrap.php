@@ -32,7 +32,7 @@ $this->module('forms')->extend([
         $time = time();
 
         $form = array_replace_recursive([
-            '_id'       => uniqid($name),
+            '_id'       => $name,
             'name'      => $name,
             'label'     => $name,
             'save_entry' => true,
@@ -356,7 +356,7 @@ if (COCKPIT_API_REQUEST) {
 }
 
 // ADMIN
-if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+if (COCKPIT_ADMIN_CP) {
     include_once(__DIR__.'/admin.php');
 }
 

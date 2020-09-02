@@ -36,7 +36,7 @@
         <img class="uk-svg-adjust" src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="50" alt="icon" data-uk-svg>
         @if($collection['description'])
         <div class="uk-container-center uk-margin-top uk-width-medium-1-2">
-            {{ htmlspecialchars($collection['description']) }}
+            {{ htmlspecialchars($collection['description'], ENT_QUOTES, 'UTF-8') }}
         </div>
         @endif
     </div>
@@ -61,7 +61,7 @@
                 <img class="uk-svg-adjust" src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="50" alt="icon" data-uk-svg>
                 @if($collection['description'])
                 <div class="uk-margin-top uk-text-small uk-text-muted">
-                    {{ htmlspecialchars($collection['description']) }}
+                    {{ htmlspecialchars($collection['description'], ENT_QUOTES, 'UTF-8') }}
                 </div>
                 @endif
                 <hr>
@@ -73,7 +73,7 @@
 
         <div class="uk-clearfix uk-margin-top" show="{ !loading && (entries.length || filter) }">
 
-            <div class="uk-float-left uk-margin-right">
+            <div class="uk-float-left">
 
                 <div class="uk-button-group">
                     <button class="uk-button uk-button-large {listmode=='list' && 'uk-button-primary'}" onclick="{ toggleListMode }"><i class="uk-icon-list"></i></button>
@@ -82,17 +82,29 @@
 
             </div>
 
-            <div class="uk-float-left uk-width-1-2">
+            <div class="uk-float-left uk-form-select uk-margin-small-left" if="{ !loading && languages.length }">
+                <span class="uk-button uk-button-large uk-button-link {lang ? 'uk-text-primary' : 'uk-text-muted'}">
+                    <i class="uk-icon-globe"></i>
+                    { lang ? _.find(languages,{'code':lang}).label : App.$data.languageDefaultLabel }
+                </span>
+                <select onchange="{changelanguage}">
+                    <option value="" selected="{lang === ''}">{App.$data.languageDefaultLabel}</option>
+                    <option each="{language,idx in languages}" value="{language.code}" selected="{lang === language.code}">{language.label}</option>
+                </select>
+            </div>
+
+            <div class="uk-float-left uk-width-1-2 uk-margin-small-left">
                 <div class="uk-form-icon uk-form uk-width-1-1 uk-text-muted">
 
                     <i class="uk-icon-search"></i>
-                    <input class="uk-width-1-1 uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter items...')" onchange="{ updatefilter }">
+                    <input class="uk-width-1-1 uk-form-large uk-form-blank {filter && filter.match(/\{(.*)\}/) && 'uk-text-monospace'}" type="text" ref="txtfilter" placeholder="@lang('Filter items...')" onchange="{ updatefilter }">
 
                 </div>
             </div>
 
             <div class="uk-float-right">
 
+                @if($app->module('collections')->hasaccess($collection['name'], 'entries_edit'))
                 <div class="uk-display-inline-block uk-margin-small-right" data-uk-dropdown="mode:'click'" if="{ selected.length }">
                     <button class="uk-button uk-button-large uk-animation-fade">@lang('Batch Action') <span class="uk-badge uk-badge-contrast uk-margin-small-left">{ selected.length }</span></button>
                     <div class="uk-dropdown">
@@ -105,13 +117,13 @@
                         </ul>
                     </div>
                 </div>
+                @endif
 
                 @if($app->module('collections')->hasaccess($collection['name'], 'entries_create'))
                 <a class="uk-button uk-button-large uk-button-primary" href="@route('/collections/entry/'.$collection['name'])">@lang('Add Entry')</a>
                 @endif
             </div>
         </div>
-
 
         <div class="uk-margin-top" show="{ !loading && (entries.length || filter) }">
 
@@ -158,7 +170,12 @@
                             <div class="uk-dropdown uk-dropdown-flip">
                                 <ul class="uk-nav uk-nav-dropdown">
                                     <li class="uk-nav-header">@lang('Actions')</li>
+
+                                    @if($app->module('collections')->hasaccess($collection['name'], 'entries_edit'))
                                     <li><a href="@route('/collections/entry/'.$collection['name'])/{ entry._id }">@lang('Edit')</a></li>
+                                    @else
+                                    <li><a href="@route('/collections/entry/'.$collection['name'])/{ entry._id }">@lang('View')</a></li>
+                                    @endif
 
                                     @if($app->module('collections')->hasaccess($collection['name'], 'entries_delete'))
                                     <li class="uk-nav-item-danger"><a class="uk-dropdown-close" onclick="{ parent.remove }">@lang('Delete')</a></li>
@@ -187,7 +204,7 @@
 
         </div>
 
-        <div class="uk-margin-large-top uk-overflow-container" if="{ entries.length && !loading && listmode=='list' }">
+        <div class="uk-margin-large-top uk-overflow-container uk-viewport-height-1-3" if="{ entries.length && !loading && listmode=='list' }">
             <table class="uk-table uk-table-tabbed uk-table-striped">
                 <thead>
                     <tr>
@@ -223,7 +240,12 @@
                                 <div class="uk-dropdown uk-dropdown-flip">
                                     <ul class="uk-nav uk-nav-dropdown">
                                         <li class="uk-nav-header">@lang('Actions')</li>
+
+                                        @if($app->module('collections')->hasaccess($collection['name'], 'entries_edit'))
                                         <li><a href="@route('/collections/entry/'.$collection['name'])/{ entry._id }">@lang('Edit')</a></li>
+                                        @else
+                                        <li><a href="@route('/collections/entry/'.$collection['name'])/{ entry._id }">@lang('View')</a></li>
+                                        @endif
 
                                         @if($app->module('collections')->hasaccess($collection['name'], 'entries_delete'))
                                         <li class="uk-nav-item-danger"><a class="uk-dropdown-close" onclick="{ parent.remove }">@lang('Delete')</a></li>
@@ -290,15 +312,15 @@
 
     </div>
 
+    @if($app->module('collections')->hasaccess($collection['name'], 'entries_edit'))
     <entries-batchedit collection="{collection}" fields={fieldsidx}></entries-batchedit>
-
+    @endif
 
     <script type="view/script">
 
         var $this = this, $root = App.$(this.root);
 
         this.collection = {{ json_encode($collection) }};
-        this.loadmore   = false;
         this.loading    = true;
         this.count      = 0;
         this.page       = 1;
@@ -306,6 +328,11 @@
         this.entries    = [];
         this.fieldsidx  = {};
         this.imageField = null;
+        this.languages  = App.$data.languages;
+
+        if (this.languages.length) {
+            this.lang = App.session.get('collections.entry.'+this.collection._id+'.lang', '');
+        }
 
         this.fields     = this.collection.fields.filter(function(field){
 
@@ -326,7 +353,8 @@
         this.fields.push(this.fieldsidx['_created']);
         this.fields.push(this.fieldsidx['_modified']);
 
-        this.sort     = {'_created': -1};
+        this.sort = {}
+        this.sort[this.collection.sort.column] = this.collection.sort.dir
         this.selected = [];
         this.listmode = App.session.get('collections.entries.'+this.collection.name+'.listmode', 'list');
 
@@ -449,6 +477,10 @@
 
             var options = { sort:this.sort };
 
+            if (this.lang) {
+                options.lang = this.lang;
+            }
+
             if (this.filter) {
                 options.filter = this.filter;
             }
@@ -482,8 +514,6 @@
                 this.pages   = data.pages;
                 this.page    = data.page;
                 this.count   = data.count;
-
-                this.loadmore = data.entries.length && data.entries.length == this.limit;
 
                 this.checkselected();
                 this.loading = false;
@@ -640,6 +670,14 @@
 
         batchedit() {
             this.tags['entries-batchedit'].open(this.entries, this.selected)
+        }
+
+        changelanguage(e) {
+            var lang = e.target.value;
+            App.session.set('collections.entry.'+this.collection._id+'.lang', lang);
+            this.lang = lang;
+            this.load(false);
+            this.update();
         }
 
     </script>

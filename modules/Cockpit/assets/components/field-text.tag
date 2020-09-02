@@ -2,7 +2,7 @@
 
     <style>
 
-        [ref="input"] {
+        [ref="input"][type=text] {
             padding-right: 30px !important;
         }
 
@@ -27,11 +27,11 @@
     <script>
 
         var $this = this;
-
-        this.type = opts.type || 'text';
-
+        
         this.on('mount', function() {
 
+            this.type = opts.type || 'text';
+            
             if (opts.cls) {
                 App.$(this.refs.input).addClass(opts.cls);
             }

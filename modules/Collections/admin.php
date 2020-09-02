@@ -11,6 +11,7 @@
 $app->on('admin.init', function() {
 
     $this->helper('admin')->addAssets('collections:assets/field-collectionlink.tag');
+    $this->helper('admin')->addAssets('collections:assets/field-collectionlinkselect.tag');
     $this->helper('admin')->addAssets('collections:assets/link-collectionitem.js');
 
     if (!$this->module('cockpit')->getGroupRights('collections') && !$this->module('collections')->getCollectionsInGroup()) {
@@ -23,16 +24,24 @@ $app->on('admin.init', function() {
     }
 
     // bind admin routes /collections/*
+    $this->bindClass('Collections\\Controller\\Trash', 'collections/trash');
     $this->bindClass('Collections\\Controller\\Import', 'collections/import');
+    $this->bindClass('Collections\\Controller\\Utils', 'collections/utils');
     $this->bindClass('Collections\\Controller\\Admin', 'collections');
+
+    $active = strpos($this['route'], '/collections') === 0;
 
     // add to modules menu
     $this->helper('admin')->addMenuItem('modules', [
         'label' => 'Collections',
         'icon'  => 'collections:icon.svg',
         'route' => '/collections',
-        'active' => strpos($this['route'], '/collections') === 0
+        'active' => $active
     ]);
+
+    if ($active) {
+        $this->helper('admin')->favicon = 'collections:icon.svg';
+    } 
 
     /**
      * listen to app search to filter collections
@@ -49,20 +58,6 @@ $app->on('admin.init', function() {
                     'url'   => $this->routeUrl('/collections/entries/'.$meta['name'])
                 ];
             }
-        }
-    });
-
-    $this->on('cockpit.menu.aside', function() {
-
-        $cols        = $this->module('collections')->getCollectionsInGroup();
-        $collections = [];
-
-        foreach($cols as $collection) {
-            if ($collection['in_menu']) $collections[] = $collection;
-        }
-
-        if (count($collections)) {
-            $this->renderView("collections:views/partials/menu.php", compact('collections'));
         }
     });
 

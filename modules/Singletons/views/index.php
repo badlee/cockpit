@@ -1,3 +1,7 @@
+<script>
+    window.__singletons = {{ json_encode($singletons) }};
+</script>
+
 <div>
     <ul class="uk-breadcrumb">
         <li class="uk-active"><span>@lang('Singletons')</span></li>
@@ -13,7 +17,7 @@
             <div class="uk-form-icon uk-form uk-text-muted">
 
                 <i class="uk-icon-filter"></i>
-                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter singleton...')" onkeyup="{ updatefilter }">
+                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter singleton...')" aria-label="@lang('Filter singleton...')" onkeyup="{ updatefilter }">
 
             </div>
 
@@ -27,7 +31,7 @@
 
         <div class="uk-margin" if="{groups.length}">
 
-            <ul class="uk-tab uk-flex uk-flex-center uk-noselect">
+            <ul class="uk-tab uk-tab-noborder uk-flex uk-flex-center uk-noselect">
                 <li class="{ !group && 'uk-active'}"><a class="uk-text-capitalize { group && 'uk-text-muted'}" onclick="{ toggleGroup }">{ App.i18n.get('All') }</a></li>
                 <li class="{ group==parent.group && 'uk-active'}" each="{group in groups}"><a class="uk-text-capitalize { group!=parent.group && 'uk-text-muted'}" onclick="{ toggleGroup }">{ App.i18n.get(group) }</a></li>
             </ul>
@@ -52,7 +56,7 @@
         </div>
 
 
-        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-margin-top">
+        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-grid-width-xlarge-1-5 uk-margin-top">
 
             <div each="{ singleton,idx in singletons }" show="{ ingroup(singleton.meta) && infilter(singleton.meta) }">
 
@@ -60,7 +64,7 @@
 
                     <div class="uk-panel-teaser uk-position-relative">
                         <canvas width="600" height="350"></canvas>
-                        <a href="@route('/singletons/form')/{ singleton.name }" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
+                        <a aria-label="{ singleton.label }" href="@route('/singletons/form')/{ singleton.name }" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
                             <div class="uk-width-1-4 uk-svg-adjust" style="color:{ (singleton.meta.color) }">
                                 <img riot-src="{ singleton.meta.icon ? '@url('assets:app/media/icons/')'+singleton.meta.icon : '@url('singletons:icon.svg')'}" alt="icon" data-uk-svg>
                             </div>
@@ -69,10 +73,9 @@
 
                     <div class="uk-grid uk-grid-small">
 
-                        <div data-uk-dropdown="delay:300">
+                        <div data-uk-dropdown="mode:'click'">
 
-                            <a class="uk-icon-cog" style="color: { (singleton.meta.color) }" href="@route('/singletons/singleton')/{ singleton.name }" if="{ singleton.meta.allowed.singleton_edit }"></a>
-                            <a class="uk-icon-cog" style="color: { (singleton.meta.color) }" if="{ !singleton.meta.allowed.singleton_edit }"></a>
+                            <a class="uk-icon-cog" style="color: { (singleton.meta.color) }"></a>
 
                             <div class="uk-dropdown">
                                 <ul class="uk-nav uk-nav-dropdown">
@@ -86,8 +89,8 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="uk-flex-item-1 uk-text-center">
-                            <a class="uk-text-bold uk-link-muted" href="@route('/singletons/form')/{singleton.name}">{ singleton.label }</a>
+                        <div class="uk-flex-item-1 uk-text-center uk-text-truncate">
+                            <a class="uk-text-bold uk-link-muted" href="@route('/singletons/form')/{singleton.name}" title="{ singleton.label }">{ singleton.label }</a>
                         </div>
                         <div>&nbsp;</div>
 
@@ -107,7 +110,7 @@
         var $this = this;
 
         this.ready  = true;
-        this.singletons = {{ json_encode($singletons) }};
+        this.singletons = window.__singletons;
         this.groups = [];
 
         this.singletons.forEach(function(singleton) {

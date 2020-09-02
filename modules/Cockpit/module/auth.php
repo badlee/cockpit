@@ -22,10 +22,15 @@ $this->module('cockpit')->extend([
 
         if (!$data['password']) return false;
 
-        $user = $app->storage->findOne('cockpit/accounts', [
-            'user'   => $data['user'],
-            'active' => true
-        ]);
+        $filter = ['active' => true];
+
+        if ($data['email']) {
+            $filter['email'] = $data['email'];
+        } else {
+            $filter['user'] = $data['user'];
+        }
+
+        $user = $app->storage->findOne('cockpit/accounts', $filter);
 
         if ($user && password_verify($data['password'], $user['password'])) {
 
@@ -159,7 +164,7 @@ $this->module('cockpit')->extend([
 
             $data[$key] = $value;
 
-            $app->storage->update('cockpit/accounts', ['_id' => $user['_id']], ['data' => $data]);
+            $app->storage->update('cockpit/accounts', ['_id' => $user['_id']], ['$set' => ['data' => $data]]);
 
             return $value;
         }

@@ -11,7 +11,9 @@
 // Helpers
 
 $this->helpers['revisions']  = 'Cockpit\\Helper\\Revisions';
-$this->helpers['updater']  = 'Cockpit\\Helper\\Updater';
+$this->helpers['updater']    = 'Cockpit\\Helper\\Updater';
+$this->helpers['async']      = 'Cockpit\\Helper\\Async';
+$this->helpers['jobs']       = 'Cockpit\\Helper\\Jobs';
 
 // API
 $this->module('cockpit')->extend([
@@ -29,7 +31,11 @@ $this->module('cockpit')->extend([
 
     'clearCache' => function() use($app) {
 
-        $dirs = ['#cache:','#tmp:','#thumbs:'];
+        $dirs = ['#cache:','#tmp:','#thumbs:', '#pstorage:tmp'];
+
+        foreach (array_unique($dirs) as &$dir) {
+            $dir = $this->app->path($dir);
+        }
 
         foreach ($dirs as $dir) {
 
@@ -55,6 +61,10 @@ $this->module('cockpit')->extend([
             $size += $app->helper('fs')->getDirSize($dir);
         }
 
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+        
         return ['size'=>$app->helper('utils')->formatSize($size)];
     },
 
@@ -64,12 +74,16 @@ $this->module('cockpit')->extend([
         $container = $this->app->path('#storage:').'/api.keys.php';
 
         if (file_exists($container)) {
+            
             $data = include($container);
             $data = @unserialize($this->app->decode($data, $this->app['sec-key']));
 
             if ($data !== false) {
                 $keys = array_merge($keys, $data);
             }
+
+        } else {
+            $keys = $this->app->storage->getKey('cockpit', 'api_keys', $keys);
         }
 
         return $keys;
@@ -77,9 +91,14 @@ $this->module('cockpit')->extend([
 
     'saveApiKeys' => function($data) {
 
-        $data      = serialize(array_merge([ 'master' => '', 'special' => [] ], (array)$data));
-        $export    = var_export($this->app->encode($data, $this->app["sec-key"]), true);
-        $container = $this->app->path('#storage:').'/api.keys.php';
+        $data = array_merge([ 'master' => '', 'special' => [] ], (array)$data);
+
+        $this->app->storage->setKey('cockpit', 'api_keys', $data);
+
+        // cache
+        $serialized = serialize($data);
+        $export     = var_export($this->app->encode($serialized, $this->app["sec-key"]), true);
+        $container  = $this->app->path('#storage:').'/api.keys.php';
 
         return $this->app->helper('fs')->write($container, "<?php\n return {$export};");
     },
@@ -114,7 +133,8 @@ $this->module('cockpit')->extend([
             'quality' => 100,
             'rebuild' => false,
             'base64' => false,
-            'output' => false
+            'output' => false,
+            'redirect' => false,
         ], $options);
 
         extract($options);
@@ -250,6 +270,10 @@ $this->module('cockpit')->extend([
 
             try {
 
+                if ($rebuild && $this->app->filestorage->has($thumbpath)) {
+                    $this->app->filestorage->delete($thumbpath);
+                }
+
                 $img = $this->app->helper("image")->take($path)->{$method}($width, $height, $fp);
 
                 $_filters = [
@@ -306,6 +330,10 @@ $this->module('cockpit')->extend([
             $this->app->stop();
         }
 
+        if ($redirect) {
+            $this->app->reroute($this->app->filestorage->getURL($thumbpath));
+        }
+
         return $this->app->filestorage->getURL($thumbpath);
     }
 ]);
@@ -317,7 +345,7 @@ include_once(__DIR__.'/module/assets.php');
 
 
 // ADMIN
-if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+if (COCKPIT_ADMIN_CP) {
 
     include_once(__DIR__.'/admin.php');
 
@@ -326,7 +354,7 @@ if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
         $token = $this->param('token', '');
         $this->response->mime = 'js';
 
-        $apiurl = ($this->req_is('ssl') ? 'https':'http').'://';
+        $apiurl = ($this->request->is('ssl') ? 'https':'http').'://';
 
         if (!in_array($this->registry['base_port'], ['80', '443'])) {
             $apiurl .= $this->registry['base_host'].":".$this->registry['base_port'];

@@ -18,7 +18,7 @@
 
                    <div class="uk-margin">
                        <label class="uk-text-small">@lang('Name')</label>
-                       <input class="uk-width-1-1 uk-form-large" type="text" ref="name" bind="singleton.name" pattern="[a-zA-Z0-9_]+" required>
+                       <input aria-label="@lang('Name')" class="uk-width-1-1 uk-form-large" type="text" ref="name" bind="singleton.name" pattern="[a-zA-Z0-9_]+" required>
                        <p class="uk-text-small uk-text-muted" if="{!singleton._id}">
                            @lang('Only alpha nummeric value is allowed')
                        </p>
@@ -26,12 +26,12 @@
 
                    <div class="uk-margin">
                        <label class="uk-text-small">@lang('Label')</label>
-                       <input class="uk-width-1-1 uk-form-large" type="text" ref="label" bind="singleton.label">
+                       <input aria-label="@lang('Label')" class="uk-width-1-1 uk-form-large" type="text" ref="label" bind="singleton.label">
                    </div>
 
                    <div class="uk-margin">
                        <label class="uk-text-small">@lang('Group')</label>
-                       <input class="uk-width-1-1 uk-form-large" type="text" ref="group" bind="singleton.group">
+                       <input aria-label="@lang('Group')" class="uk-width-1-1 uk-form-large" type="text" ref="group" bind="singleton.group">
                    </div>
 
                    <div class="uk-margin">
@@ -62,12 +62,10 @@
 
                    <div class="uk-grid-margin">
                        <label class="uk-text-small">@lang('Description')</label>
-                       <textarea class="uk-width-1-1 uk-form-large" name="description" bind="singleton.description" rows="5"></textarea>
+                       <textarea aria-label="@lang('Description')" class="uk-width-1-1 uk-form-large" name="description" bind="singleton.description" rows="5"></textarea>
                    </div>
 
-                    <div class="uk-margin">
-                        <field-boolean bind="singleton.in_menu" title="@lang('Show in system menu')" label="@lang('Show in system menu')"></field-boolean>
-                    </div>
+                   @trigger('singletons.settings.aside')
 
                </div>
 
@@ -178,7 +176,7 @@
 
             this.trigger('update');
 
-            // bind clobal command + save
+            // bind global command + save
             Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
 
                 if (App.$('.uk-modal.uk-open').length) {
@@ -189,6 +187,13 @@
                 $this.submit();
                 return false;
             });
+
+            // lock resource
+            var idle = setInterval(function() {
+                if (!$this.singleton._id) return;
+                Cockpit.lockResource($this.singleton._id);
+                clearInterval(idle);
+            }, 60000);
         });
 
         this.on('update', function(){

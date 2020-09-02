@@ -9,7 +9,7 @@
         </style>
 
         <i class="uk-icon-search"></i>
-        <input class="uk-width-1-1 uk-form-blank" type="text" placeholder="{ App.i18n.get('Search for anything...') }">
+        <input class="uk-width-1-1 uk-form-blank" type="text" aria-label="{App.i18n.get('Search for anything...')}" placeholder="{ App.i18n.get('Search for anything...') }">
 
     </div>
 
@@ -21,7 +21,7 @@
 
             UIkit.autocomplete(this.refs.autocomplete, {
                 source: App.route('/cockpit/search'),
-                template: '<ul class="uk-nav uk-nav-autocomplete uk-autocomplete-results">{{~items}}<li data-value="" data-url="{{$item.url}}"><a><i class="uk-icon-{{ ($item.icon || "cube") }}"></i> {{$item.title}}</a></li>{{/items}}</ul>'
+                template: '<ul class="uk-nav uk-nav-autocomplete uk-autocomplete-results">{{~items}}<li data-value="" data-url="{{$item.url}}"><a href="{{$item.url}}"><i class="uk-icon-{{ ($item.icon || "cube") }}"></i> {{$item.title}}</a></li>{{/items}}</ul>'
             });
 
             UIkit.$doc.on("keydown", function(e) {

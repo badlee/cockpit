@@ -56,8 +56,7 @@
 // ========================================================================
 
 .hook-button() {
-    // border-radius: @global-border-radius;
-    border-radius: 30px;
+    border-radius: @global-border-radius;
     font-weight: bold;
     letter-spacing: .6px;
     text-transform: uppercase;
@@ -158,6 +157,11 @@
         border-bottom-left-radius: 0;
     }
 
+    .uk-button-group > .uk-button:only-child,
+    .uk-button-group > div:only-child .uk-button {
+        border-radius: @global-border-radius;
+    }
+
     /*
      * Create position context to superimpose the successor elements border
      * Known issue: If you use an `a` element as button and an icon inside,
@@ -175,7 +179,7 @@
         border-width: 1px;
         border-style: solid;
         border-color: currentColor;
-        border-radius: 30px;
+        border-radius: @global-border-radius;
 
         &:hover, &:active {
             background: none;

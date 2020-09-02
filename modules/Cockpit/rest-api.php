@@ -26,12 +26,13 @@ $this->on('before', function() {
             return false;
         }
 
-        $token = $this->param('token', $_SERVER['HTTP_COCKPIT_TOKEN'] ?? $this->helper('utils')->getBearerToken());
+        $token = $this->param('token', $this->request->server['HTTP_COCKPIT_TOKEN'] ?? $this->helper('utils')->getBearerToken());
 
         // api key check
         $allowed = false;
 
-        if (preg_match('/account-/', $token)) {
+        // is account token?
+        if ($token && preg_match('/account-/', $token)) {
 
             $account = $this->storage->findOne('cockpit/accounts', ['api_key' => $token]);
 
@@ -39,7 +40,13 @@ $this->on('before', function() {
                 $allowed = true;
                 $this->module('cockpit')->setUser($account, false);
             }
+        
+        // is jwt token?
+        } elseif ($token && preg_match('/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/', $token)) {
+        
+            // todo
 
+        // default
         } elseif ($token) {
 
             $apikeys = $this->module('cockpit')->loadApiKeys();
@@ -67,7 +74,7 @@ $this->on('before', function() {
                             $rule = trim($rule);
                             if (!$rule) continue;
 
-                            if (preg_match("#{$rule}#", COCKPIT_ADMIN_ROUTE)) {
+                            if ($rule == '*' || preg_match("#{$rule}#", COCKPIT_ADMIN_ROUTE)) {
                                 $allowed = true;
                                 break;
                             }

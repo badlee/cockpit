@@ -21,11 +21,19 @@ class Admin extends \Lime\Helper {
     public $options;
     public $user;
 
+    public $favicon;
+
     public function initialize(){
 
         $this->data =  new \ContainerArray();
         $this->options = [];
         $this->user = $this->app->module('cockpit')->getUser();
+
+        // unset security related information
+        if ($this->user) {
+            unset($this->user['password'], $this->user['api_key'], $this->user['_reset_token']);
+        }
+
         $this->user['data'] = new \ContainerArray(isset($this->user['data']) && is_array($this->user['data']) ? $this->user['data']:[]);
     }
 
@@ -88,12 +96,46 @@ class Admin extends \Lime\Helper {
                 'languages' => $languages,
                 'languageDefaultLabel' => $langDefaultLabel,
                 'groups' => $this->app->helper('acl')->getGroups(),
+                'maxUploadSize' => $this->app->helper('utils')->getMaxUploadSize(),
 
                 'acl' => [
                     'finder' => $this->app->module('cockpit')->hasaccess('cockpit', 'finder')
                 ]
             ]
         ]);
+    }
+
+    public function favicon() {
+        
+        if (!$this->favicon) return;
+
+        $favicon = $this->favicon;
+        $color = null;
+
+        if (is_array($this->favicon)) {
+            $favicon = $this->favicon['path'];
+            $color = $this->favicon['color'] ?? null;
+        }
+
+        $ext = \strtolower(pathinfo($favicon, PATHINFO_EXTENSION));
+
+        if (!$ext) return;
+
+        $type = $ext == 'svg' ? 'image/svg+xml':"image/{$ext}";
+
+        if (strpos($favicon, ':') && !preg_match('/^(\/|http\:|https\:)\//', $favicon)) {
+            $path = $this->app->path($favicon);
+            if (!$path) return;
+            $favicon = $this->app->baseUrl($favicon);
+
+            if ($ext=='svg' && $color) {
+                $svg = file_get_contents($path);
+                $svg = preg_replace('/fill="(.*?)"/', 'fill="'.$color.'"', $svg);
+                $favicon = 'data:image/svg+xml;base64,'.base64_encode($svg);
+            }
+        }
+
+        return '<link rel="icon" type="'.$type.'" href="'.$favicon.'" app-icon="true">';
     }
 
     public function addMenuItem($menu, $data) {
@@ -158,8 +200,9 @@ class Admin extends \Lime\Helper {
         return $this->app->module('cockpit')->updateUserOption($key, $value);
     }
 
-    public function isResourceLocked($resourceId, $ttl = 300) {
+    public function isResourceLocked($resourceId, $ttl = null) {
 
+        $ttl  = $ttl ?? 300;
         $key  = "locked:{$resourceId}";
         $meta = $this->app->memory->get($key, false);
 
@@ -175,13 +218,40 @@ class Admin extends \Lime\Helper {
         return false;
     }
 
+    public function isResourceEditableByCurrentUser($resourceId, &$meta = null) {
+
+        $meta = $this->isResourceLocked($resourceId);
+
+        if (!$meta) {
+            return true;
+        }
+
+        $user = $this->app->module('cockpit')->getUser();
+
+        if ($meta['user']['_id'] == $user['_id'] && $meta['sid'] == md5(session_id())) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function lockResourceId($resourceId, $user = null) {
+
+        if (!$resourceId) {
+            return false;
+        }
 
         $key  = "locked:{$resourceId}";
         $user = $user ?? $this->app->module('cockpit')->getUser();
 
+        if (!$user) {
+            return false;
+        }
+
         $meta = [
-            'user' => $user,
+            'rid'  => $resourceId,
+            'user' => ['_id' => $user['_id'], 'name' => $user['name'], 'user' => $user['user'], 'email' => $user['email']],
+            'sid'  => md5(session_id()),
             'time' => time()
         ];
 

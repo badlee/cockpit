@@ -34,7 +34,7 @@ $this->module('collections')->extend([
         $collection = array_replace_recursive([
             'name'      => $name,
             'label'     => $name,
-            '_id'       => uniqid($name),
+            '_id'       => $name,
             'fields'    => [],
             'sortable'  => false,
             'in_menu'   => false,
@@ -129,6 +129,41 @@ $this->module('collections')->extend([
         }
 
         return false;
+    },
+
+    'renameCollection' => function($name, $to) {
+
+        if (!$this->exists($name)) return false;
+        if ($this->exists($to)) return false;
+
+        $collection = include($this->app->path("#storage:collections/{$name}.collection.php"));
+
+        $_collectionSrc = $collection['_id'];
+
+        $collection['name'] = $to;
+        $collection['_id'] = $to;
+
+        $export = var_export($collection, true);
+
+        if (!$this->app->helper('fs')->write("#storage:collections/{$to}.collection.php", "<?php\n return {$export};")) {
+            return false;
+        }
+
+        $this->app->helper('fs')->delete("#storage:collections/{$name}.collection.php");
+
+        // rename rules
+        if ($this->app->path('#storage:collections/rules')) {
+            
+            $rulesPath = $this->app->path('#storage:collections/rules');
+
+            foreach (['create', 'read', 'update', 'delete'] as $method) {
+                $this->app->helper('fs')->rename("{$rulesPath}/{$name}.{$method}.php", "{$rulesPath}/{$to}.{$method}.php");
+            }
+        }
+
+        $this->app->storage->renameCollection($_collectionSrc, $to, 'collections');
+
+        return true;
     },
 
     'collections' => function($extended = false) {
@@ -282,7 +317,7 @@ $this->module('collections')->extend([
 
             if (isset($_collection['fields'])) {
 
-                foreach($_collection['fields'] as $field) {
+                foreach ($_collection['fields'] as $field) {
 
                     // skip missing fields on update
                     if (!isset($entry[$field['name']]) && $isUpdate) {
@@ -290,7 +325,7 @@ $this->module('collections')->extend([
                     }
 
                     if (!isset($entry[$field['name']])) {
-                        $value = $field['default'] ?? '';
+                        $value = $field['default'] ?? null;
                     } else {
                         $value = $entry[$field['name']];
                     }
@@ -327,15 +362,18 @@ $this->module('collections')->extend([
                         case 'password':
 
                             if ($value) {
-
                                 $value = $this->app->hash($value);
                             }
 
                             break;
                     }
 
+                    // check required
                     if (!$isUpdate && isset($field['required']) && $field['required'] && !$value) {
-                        // Todo
+
+                        if (!is_numeric($value) && $value !== false && empty($value)) {
+                            $this->app->stop(['error' => "The {$field['name']} is required!"], 422);
+                        }
                     }
 
                     if ($isUpdate && $field['type'] == 'password' && !$value && isset($entry[$field['name']])) {
@@ -603,13 +641,17 @@ function cockpit_populate_collection(&$items, $maxlevel = -1, $level = 0, $field
 
     foreach ($items as $k => &$v) {
 
+        if (!is_array($v)) {
+            continue; 
+        }
+
         if (is_array($items[$k])) {
             $items[$k] = cockpit_populate_collection($items[$k], $maxlevel, ($level + 1), $fieldsFilter);
         }
 
         if ($level > 0 && isset($v['_id'], $v['link'])) {
             $link = $v['link'];
-            $items[$k] = cockpit('collections')->_resolveLinkedItem($v['link'], $v['_id'], $fieldsFilter);
+            $items[$k] = cockpit('collections')->_resolveLinkedItem($v['link'], (string)$v['_id'], $fieldsFilter);
             $items[$k]['_link'] = $link;
             $items[$k] = cockpit_populate_collection($items[$k], $maxlevel, ($level + 1), $fieldsFilter);
         }
@@ -730,7 +772,7 @@ if (COCKPIT_API_REQUEST) {
 
 
 // ADMIN
-if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+if (COCKPIT_ADMIN_CP) {
     include_once(__DIR__.'/admin.php');
 }
 

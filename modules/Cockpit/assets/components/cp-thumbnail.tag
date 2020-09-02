@@ -7,7 +7,7 @@
 
     <script>
 
-        var $this = this, src;
+        var $this = this, src, cache = {};
 
         this.inView = false;
         this.width  = opts.width;
@@ -47,40 +47,17 @@
 
         this.load = function() {
 
-            var _src = opts.src || opts.riotSrc || opts['riot-src'];
-            var mode = opts.mode || 'bestFit';
+            var _src = opts.src || opts.riotSrc || opts['riot-src'], img, mode = opts.mode || 'bestFit';
 
             if (!_src || src === _src) {
                 return;
             }
 
             this.refs.spinner.style.display = '';
-            
-            src = _src;
 
-            requestAnimationFrame(function() {
+            this.getUrl(_src, mode).then(function(url) {
 
-                if (_src.match(/^(http\:|https\:|\/\/)/) && !(_src.includes(ASSETS_URL) || _src.includes(SITE_URL))) {
-
-                    src = _src;
-
-                    setTimeout(function() {
-                        $this.updateCanvasDim(_src)
-                    }, 50);
-
-                    return;
-                }
-                
-                var url;
-                
-                if (_src.match(/\.(svg|ico)$/i)) {
-                    url = _src;
-                } else {
-                    url = App.route(`/cockpit/utils/thumb_url?src=${_src}&w=${opts.width}&h=${opts.height}&m=${mode}&o=1`);
-                }
-                
-                var img = new Image();
-                
+                img = new Image();
                 img.onload = function() {    
                     
                     setTimeout(function() {
@@ -88,12 +65,9 @@
                     }, 0);
                 }
                 
-                img.onerror = function() {
-                    //console.log(`error ${url}`)
-                }
-                
+                img.onerror = function() {}
+
                 img.src = url;
-                
             });
         };
 
@@ -123,6 +97,30 @@
 
             }.bind(this), 0);
 
+        }
+
+        getUrl(url, mode) {
+
+            var key = `${url}:${mode}`;
+
+            if (!cache[key]) {
+
+                cache[key] = new Promise(function(resolve) {
+                    
+                    if (url.match(/^(http\:|https\:|\/\/)/) && !(url.includes(ASSETS_URL) || url.includes(SITE_URL))) {
+                        resolve(url);
+                        return;
+                    }
+                    
+                    if (!url.match(/\.(svg|ico)$/i)) {
+                        url = App.route(`/cockpit/utils/thumb_url?src=${url}&w=${opts.width}&h=${opts.height}&m=${mode}&re=1`);
+                    }
+                    
+                    resolve(url);
+                });
+            }
+
+            return cache[key];
         }
 
     </script>

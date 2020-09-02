@@ -9,6 +9,10 @@
 
     </style>
 
+    <div class="uk-text-xlarge uk-text-center uk-text-primary uk-margin-large-top" show="{!isReady}">
+        <cp-preloader class="uk-container-center"></cp-preloader>
+    </div>
+
     <div class="picoedit" show="{isReady}">
 
         <div class="picoedit-toolbar uk-flex" if="{path}">

@@ -34,9 +34,8 @@ $this->module('singletons')->extend([
         $singleton = array_replace_recursive([
             'name'      => $name,
             'label'     => $name,
-            '_id'       => uniqid($name),
+            '_id'       => $name,
             'fields'    => [],
-            'template'  => '',
             'data'      => null,
             '_created'  => $time,
             '_modified' => $time
@@ -128,7 +127,7 @@ $this->module('singletons')->extend([
                 $this->app->helper('revisions')->add($singleton['_id'], $data, "singletons/{$singleton['name']}", true);
             }
 
-            return true;
+            return $data;
         }
 
         return false;
@@ -410,7 +409,7 @@ if (COCKPIT_API_REQUEST) {
 }
 
 // ADMIN
-if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+if (COCKPIT_ADMIN_CP) {
     include_once(__DIR__.'/admin.php');
 }
 

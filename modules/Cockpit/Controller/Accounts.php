@@ -37,6 +37,8 @@ class Accounts extends \Cockpit\AuthController {
 
         $account = $this->app->storage->findOne('cockpit/accounts', ['_id' => $uid]);
 
+        $this->app['user'] = $this->user;
+
         if (!$account) {
             return false;
         }
@@ -46,6 +48,12 @@ class Accounts extends \Cockpit\AuthController {
         $fields    = $this->app->retrieve('config/account/fields', null);
         $languages = $this->getLanguages();
         $groups    = $this->module('cockpit')->getGroups();
+
+        if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($uid, $meta)) {
+            return $this->render('cockpit:views/base/locked.php', compact('meta'));
+        }
+
+        $this->app->helper('admin')->lockResourceId($uid);
 
         $this->app->trigger('cockpit.account.fields', [&$fields, &$account]);
 
@@ -89,6 +97,7 @@ class Accounts extends \Cockpit\AuthController {
             }
 
             $data['_modified'] = time();
+            $isUpdate = false;
 
             if (!isset($data['_id'])) {
 
@@ -102,6 +111,14 @@ class Accounts extends \Cockpit\AuthController {
                 }
 
                 $data['_created'] = $data['_modified'];
+                
+            } else {
+                
+                if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($data['_id'])) {
+                    $this->stop(['error' => "Saving failed! Account is locked!"], 412);
+                }
+
+                $isUpdate = true;
             }
 
             if (isset($data['group']) && !$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
@@ -153,12 +170,17 @@ class Accounts extends \Cockpit\AuthController {
             $this->app->trigger('cockpit.accounts.save', [&$data, isset($data['_id'])]);
             $this->app->storage->save('cockpit/accounts', $data);
 
-            if (isset($data['password'])) {
-                unset($data['password']);
-            }
+            $data = $this->app->storage->findOne('cockpit/accounts', ['_id' => $data['_id']]);
+
+            if (isset($data['password'])) unset($data['password']);
+            if (isset($data['_reset_token'])) unset($data['_reset_token']);
 
             if ($data['_id'] == $this->user['_id']) {
                 $this->module('cockpit')->setUser($data);
+            }
+
+            if (!$isUpdate) {
+                $this->app->helper('admin')->lockResourceId($data['_id']);
             }
 
             return json_encode($data);
@@ -190,15 +212,25 @@ class Accounts extends \Cockpit\AuthController {
 
     public function find() {
 
+        \session_write_close();
+
         $options = array_merge([
             'sort'   => ['user' => 1]
         ], $this->param('options', []));
 
-        if (isset($options['filter'])) {
+        if (isset($options['filter']) && is_string($options['filter'])) {
 
-            if (is_string($options['filter'])) {
+            $filter = null;
 
-                $options['filter'] = [
+            if (\preg_match('/^\{(.*)\}$/', $options['filter'])) {
+
+                try {
+                    $filter = json5_decode($options['filter'], true);
+                } catch (\Exception $e) {}
+            }
+
+            if (!$filter) {
+                $filter = [
                     '$or' => [
                         ['name' => ['$regex' => $options['filter']]],
                         ['user' => ['$regex' => $options['filter']]],
@@ -206,6 +238,8 @@ class Accounts extends \Cockpit\AuthController {
                     ]
                 ];
             }
+
+            $options['filter'] = $filter;
         }
 
         $accounts = $this->app->storage->find('cockpit/accounts', $options)->toArray();

@@ -16,7 +16,7 @@ class Admin extends \Cockpit\AuthController {
 
     public function index() {
 
-        $_collections = $this->module('collections')->getCollectionsInGroup(null, true);
+        $_collections = $this->module('collections')->getCollectionsInGroup(null, false);
         $collections  = [];
 
         foreach ($_collections as $collection => $meta) {
@@ -25,13 +25,16 @@ class Admin extends \Cockpit\AuthController {
                 'delete' => $this->module('cockpit')->hasaccess('collections', 'delete'),
                 'create' => $this->module('cockpit')->hasaccess('collections', 'create'),
                 'edit' => $this->module('collections')->hasaccess($collection, 'collection_edit'),
-                'entries_create' => $this->module('collections')->hasaccess($collection, 'collection_create')
+                'entries_create' => $this->module('collections')->hasaccess($collection, 'collection_create'),
+                'entries_delete' => $this->module('collections')->hasaccess($collection, 'entries_delete'),
             ];
 
+            $meta['itemsCount'] = null;
+
             $collections[] = [
-              'name' => $collection,
-              'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $collection,
-              'meta' => $meta
+                'name' => $collection,
+                'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $collection,
+                'meta' => $meta
             ];
         }
 
@@ -66,15 +69,21 @@ class Admin extends \Cockpit\AuthController {
             return $this->helper('admin')->denyRequest();
         }
 
-        $collection = [
+        $default = [
             'name' => '',
             'label' => '',
             'color' => '',
             'fields'=>[],
             'acl' => new \ArrayObject,
             'sortable' => false,
+            'sort' => [
+                'column' => '_created',
+                'dir' => -1,
+            ],
             'in_menu' => false
         ];
+
+        $collection = $default;
 
         if ($name) {
 
@@ -83,6 +92,14 @@ class Admin extends \Cockpit\AuthController {
             if (!$collection) {
                 return false;
             }
+
+            if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($collection['_id'], $meta)) {
+                return $this->render('cockpit:views/base/locked.php', compact('meta'));
+            }
+
+            $this->app->helper('admin')->lockResourceId($collection['_id']);
+
+            $collection = array_merge($default, $collection);
         }
 
         // get field templates
@@ -124,15 +141,27 @@ class Admin extends \Cockpit\AuthController {
             return false;
         }
 
-        if (!isset($collection['_id']) && !$this->module('cockpit')->hasaccess('collections', 'create')) {
+        $isUpdate = isset($collection['_id']);
+
+        if (!$isUpdate && !$this->module('cockpit')->hasaccess('collections', 'create')) {
             return $this->helper('admin')->denyRequest();
         }
 
-        if (isset($collection['_id']) && !$this->module('collections')->hasaccess($collection['name'], 'collection_edit')) {
+        if ($isUpdate && !$this->module('collections')->hasaccess($collection['name'], 'collection_edit')) {
             return $this->helper('admin')->denyRequest();
         }
 
-        return $this->module('collections')->saveCollection($collection['name'], $collection, $rules);
+        if ($isUpdate && !$this->app->helper('admin')->isResourceEditableByCurrentUser($collection['_id'])) {
+            $this->stop(['error' => "Saving failed! Collection is locked!"], 412);
+        }
+
+        $collection = $this->module('collections')->saveCollection($collection['name'], $collection, $rules);
+
+        if (!$isUpdate) {
+            $this->app->helper('admin')->lockResourceId($collection['_id']);
+        }
+
+        return $collection;
     }
 
     public function entries($collection) {
@@ -147,16 +176,23 @@ class Admin extends \Cockpit\AuthController {
             return false;
         }
 
-        $count = $this->module('collections')->count($collection['name']);
-
         $collection = array_merge([
             'sortable' => false,
+            'sort' => [
+                'column' => '_created',
+                'dir' => -1,
+            ],
             'color' => '',
             'icon' => '',
             'description' => ''
         ], $collection);
 
         $context = _check_collection_rule($collection, 'read', ['options' => ['filter'=>[]]]);
+
+        $this->app->helper('admin')->favicon = [
+            'path' => 'collections:icon.svg',
+            'color' => $collection['color']
+        ];
 
         if ($context && isset($context->options['fields'])) {
             foreach ($collection['fields'] as &$field) {
@@ -172,7 +208,7 @@ class Admin extends \Cockpit\AuthController {
             $view = $override;
         }
 
-        return $this->render($view, compact('collection', 'count'));
+        return $this->render($view, compact('collection'));
     }
 
     public function entry($collection, $id = null) {
@@ -195,25 +231,34 @@ class Admin extends \Cockpit\AuthController {
 
         $collection = array_merge([
             'sortable' => false,
+            'sort' => [
+                'column' => '_created',
+                'dir' => -1,
+            ],
             'color' => '',
             'icon' => '',
             'description' => ''
         ], $collection);
 
+        $this->app->helper('admin')->favicon = [
+            'path' => 'collections:icon.svg',
+            'color' => $collection['color']
+        ];
+
         if ($id) {
 
-            //$entry = $this->module('collections')->findOne($collection['name'], ['_id' => $id]);
-            $entry = $this->app->storage->findOne("collections/{$collection['_id']}", ['_id' => $id]);
+            $entry = $this->module('collections')->findOne($collection['name'], ['_id' => $id]);
+            //$entry = $this->app->storage->findOne("collections/{$collection['_id']}", ['_id' => $id]);
 
             if (!$entry) {
-                return false;
+                return cockpit()->helper('admin')->denyRequest();
             }
 
-            $meta = $this->app->helper('admin')->isResourceLocked($id);
-
-            if ($meta && $meta['user']['_id'] != $this->module('cockpit')->getUser('_id')) {
-                return $this->render('collections:views/locked.php', compact('collection', 'entry', 'meta'));
+            if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($id, $meta)) {
+                return $this->render('collections:views/locked.php', compact('meta', 'collection', 'entry'));
             }
+
+            $this->app->helper('admin')->lockResourceId($id);
         }
 
         $context = _check_collection_rule($collection, 'read', ['options' => ['filter'=>[]]]);
@@ -229,8 +274,6 @@ class Admin extends \Cockpit\AuthController {
         if ($override = $this->app->path('#config:collections/'.$collection['name'].'/views/entry.php')) {
             $view = $override;
         }
-
-        $this->app->helper('admin')->lockResourceId($id);
 
         return $this->render($view, compact('collection', 'entry', 'excludeFields'));
     }
@@ -260,8 +303,14 @@ class Admin extends \Cockpit\AuthController {
         $entry['_mby'] = $this->module('cockpit')->getUser('_id');
 
         if (isset($entry['_id'])) {
+
+            if (!$this->app->helper('admin')->isResourceEditableByCurrentUser($entry['_id'])) {
+                $this->stop(['error' => "Saving failed! Entry is locked!"], 412);
+            }
+
             $_entry = $this->module('collections')->findOne($collection['name'], ['_id' => $entry['_id']]);
             $revision = !(json_encode($_entry) == json_encode($entry));
+
         } else {
 
             $entry['_by'] = $entry['_mby'];
@@ -270,6 +319,7 @@ class Admin extends \Cockpit\AuthController {
             if ($collection['sortable']) {
                  $entry['_o'] = $this->app->storage->count("collections/{$collection['_id']}", ['_pid' => ['$exists' => false]]);
             }
+
         }
 
         $entry = $this->module('collections')->save($collection['name'], $entry, ['revision' => $revision]);
@@ -280,6 +330,8 @@ class Admin extends \Cockpit\AuthController {
     }
 
     public function delete_entries($collection) {
+
+        \session_write_close();
 
         $collection = $this->module('collections')->collection($collection);
 
@@ -297,12 +349,35 @@ class Admin extends \Cockpit\AuthController {
             return false;
         }
 
+        $items = $this->module('collections')->find($collection['name'], ['filter' => $filter]);
+
+        if (count($items)) {
+            
+            $trashItems = [];
+            $time = time();
+            $by = $this->module('cockpit')->getUser('_id');
+
+            foreach ($items as $item) {
+
+                $trashItems[] = [
+                    'collection' => $collection['name'],
+                    'data' => $item,
+                    '_by' => $by,
+                    '_created' => $time
+                ];
+            }
+
+            $this->app->storage->getCollection('collections/_trash')->insertMany($trashItems);
+        }
+
         $this->module('collections')->remove($collection['name'], $filter);
 
         return true;
     }
 
     public function update_order($collection) {
+
+        \session_write_close();
 
         $collection = $this->module('collections')->collection($collection);
         $entries = $this->param('entries');
@@ -324,6 +399,8 @@ class Admin extends \Cockpit\AuthController {
 
     public function export($collection) {
 
+        \session_write_close();
+
         if (!$this->app->module("cockpit")->hasaccess('collections', 'manage')) {
             return false;
         }
@@ -343,6 +420,8 @@ class Admin extends \Cockpit\AuthController {
 
 
     public function tree() {
+
+        \session_write_close();
 
         $collection = $this->app->param('collection');
 
@@ -365,6 +444,8 @@ class Admin extends \Cockpit\AuthController {
 
     public function find() {
 
+        \session_write_close();
+
         $collection = $this->app->param('collection');
         $options    = $this->app->param('options');
 
@@ -373,13 +454,30 @@ class Admin extends \Cockpit\AuthController {
         $collection = $this->app->module('collections')->collection($collection);
 
         if (isset($options['filter']) && is_string($options['filter'])) {
-            $options['filter'] = $this->_filter($options['filter'], $collection);
+
+            $filter = null;
+
+            if (\preg_match('/^\{(.*)\}$/', $options['filter'])) {
+
+                try {
+                    $filter = json5_decode($options['filter'], true);
+                } catch (\Exception $e) {}
+            }
+
+            if (!$filter) {
+                $filter = $this->_filter($options['filter'], $collection, $options['lang'] ?? null);
+            }
+
+            $options['filter'] = $filter;
         }
 
+        $this->app->trigger("collections.admin.find.before.{$collection['name']}", [&$options]);
         $entries = $this->app->module('collections')->find($collection['name'], $options);
-        $count   = $this->app->module('collections')->count($collection['name'], isset($options['filter']) ? $options['filter'] : []);
-        $pages   = isset($options['limit']) ? ceil($count / $options['limit']) : 1;
-        $page    = 1;
+        $this->app->trigger("collections.admin.find.after.{$collection['name']}", [&$entries, $options]);
+        
+        $count = $this->app->module('collections')->count($collection['name'], isset($options['filter']) ? $options['filter'] : []);
+        $pages = isset($options['limit']) ? ceil($count / $options['limit']) : 1;
+        $page  = 1;
 
         if ($pages > 1 && isset($options['skip'])) {
             $page = ceil($options['skip'] / $options['limit']) + 1;
@@ -413,43 +511,49 @@ class Admin extends \Cockpit\AuthController {
         return $this->render('collections:views/revisions.php', compact('collection', 'entry', 'revisions'));
     }
 
-    protected function _filter($filter, $collection) {
+    protected function _filter($filter, $collection, $lang = null) {
 
         if ($this->app->storage->type == 'mongolite') {
-            return $this->_filterLight($filter, $collection);
+            return $this->_filterLight($filter, $collection, $lang);
         }
 
         if ($this->app->storage->type == 'mongodb') {
-            return $this->_filterMongo($filter, $collection);
+            return $this->_filterMongo($filter, $collection, $lang);
         }
 
         return null;
 
     }
 
-    protected function _filterLight($filter, $collection) {
+    protected function _filterLight($filter, $collection, $lang) {
 
         $allowedtypes = ['text','longtext','boolean','select','html','wysiwyg','markdown','code'];
         $criterias    = [];
         $_filter      = null;
 
-        foreach($collection['fields'] as $field) {
+        foreach ($collection['fields'] as $field) {
+
+            $name = $field['name'];
+
+            if ($lang && $field['localize']) {
+                $name = "{$name}_{$lang}";
+            }
 
             if ($field['type'] != 'boolean' && in_array($field['type'], $allowedtypes)) {
                 $criteria = [];
-                $criteria[$field['name']] = ['$regex' => $filter];
+                $criteria[$name] = ['$regex' => $filter];
                 $criterias[] = $criteria;
             }
 
             if ($field['type']=='collectionlink') {
                 $criteria = [];
-                $criteria[$field['name'].'.display'] = ['$regex' => $filter];
+                $criteria[$name.'.display'] = ['$regex' => $filter];
                 $criterias[] = $criteria;
             }
 
             if ($field['type']=='location') {
                 $criteria = [];
-                $criteria[$field['name'].'.address'] = ['$regex' => $filter];
+                $criteria[$name.'.address'] = ['$regex' => $filter];
                 $criterias[] = $criteria;
             }
 
@@ -462,29 +566,35 @@ class Admin extends \Cockpit\AuthController {
         return $_filter;
     }
 
-    protected function _filterMongo($filter, $collection) {
+    protected function _filterMongo($filter, $collection, $lang) {
 
         $allowedtypes = ['text','longtext','boolean','select','html','wysiwyg','markdown','code'];
         $criterias    = [];
         $_filter      = null;
 
-        foreach($collection['fields'] as $field) {
+        foreach ($collection['fields'] as $field) {
+
+            $name = $field['name'];
+
+            if ($lang && $field['localize']) {
+                $name = "{$name}_{$lang}";
+            }
 
             if ($field['type'] != 'boolean' && in_array($field['type'], $allowedtypes)) {
                 $criteria = [];
-                $criteria[$field['name']] = ['$regex' => $filter, '$options' => 'i'];
+                $criteria[$name] = ['$regex' => $filter, '$options' => 'i'];
                 $criterias[] = $criteria;
             }
 
             if ($field['type']=='collectionlink') {
                 $criteria = [];
-                $criteria[$field['name'].'.display'] = ['$regex' => $filter, '$options' => 'i'];
+                $criteria[$name.'.display'] = ['$regex' => $filter, '$options' => 'i'];
                 $criterias[] = $criteria;
             }
 
             if ($field['type']=='location') {
                 $criteria = [];
-                $criteria[$field['name'].'.address'] = ['$regex' => $filter, '$options' => 'i'];
+                $criteria[$name.'.address'] = ['$regex' => $filter, '$options' => 'i'];
                 $criterias[] = $criteria;
             }
 

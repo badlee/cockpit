@@ -14,15 +14,21 @@
 
         <div class="uk-form" if="{ mode=='list' }">
 
-            <div class="uk-grid uk-grid-width-1-2">
+            <div class="uk-grid">
                 <div>
                     <div class="uk-grid uk-grid-small uk-flex-middle">
                         <div>
+                            <span class="uk-button-group uk-margin-right">
+                                <button class="uk-button uk-button-large {listmode=='list' && 'uk-button-primary'}" type="button" onclick="{ toggleListMode }" aria-label="{ App.i18n.get('Switch to list-mode') }"><i class="uk-icon-list"></i></button>
+                                <button class="uk-button uk-button-large {listmode=='grid' && 'uk-button-primary'}" type="button" onclick="{ toggleListMode }" aria-label="{ App.i18n.get('Switch to tile-mode') }"><i class="uk-icon-th"></i></button>
+                            </span>
+                        </div>
+                        <div show="{!opts.typefilter}">
                             <div class="uk-form-select">
 
                                 <span class="uk-button uk-button-large { getRefValue('filtertype') && 'uk-button-primary'} uk-text-capitalize"><i class="uk-icon-eye uk-margin-small-right"></i> { getRefValue('filtertype') || App.i18n.get('All') }</span>
 
-                                <select ref="filtertype" onchange="{ updateFilter }">
+                                <select ref="filtertype" onchange="{ updateFilter }" aria-label="{App.i18n.get('Mime Type')}">
                                     <option value="">All</option>
                                     <option value="image">Image</option>
                                     <option value="video">Video</option>
@@ -37,12 +43,13 @@
                         <div class="uk-flex-item-1">
                             <div class="uk-form-icon uk-display-block uk-width-1-1">
                                 <i class="uk-icon-search"></i>
-                                <input class="uk-width-1-1 uk-form-large" type="text" ref="filtertitle" onchange="{ updateFilter }">
+                                <input class="uk-width-1-1 uk-form-large" type="text" aria-label="{ App.i18n.get('Search assets') }" ref="filtertitle" onchange="{ updateFilter }">
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="uk-text-right">
+                <div class="uk-flex-item-1"></div>
+                <div class="uk-flex uk-flex-middle">
 
                     <button class="uk-button uk-button-large uk-button-danger" type="button" onclick="{ removeSelected }" show="{ selected.length }">
                         { App.i18n.get('Delete') } <span class="uk-badge uk-badge-contrast uk-margin-small-left">{ selected.length }</span>
@@ -50,15 +57,31 @@
 
                     <button class="uk-button uk-button-large uk-button-link" onclick="{addFolder}">{ App.i18n.get('Add folder') }</button>
 
-                    <span class="uk-button-group uk-button-large">
-                        <button class="uk-button uk-button-large {listmode=='list' && 'uk-button-primary'}" type="button" onclick="{ toggleListMode }"><i class="uk-icon-list"></i></button>
-                        <button class="uk-button uk-button-large {listmode=='grid' && 'uk-button-primary'}" type="button" onclick="{ toggleListMode }"><i class="uk-icon-th"></i></button>
-                    </span>
+                    <div data-uk-dropdown="mode:'click'">
 
-                    <span class="uk-button uk-button-large uk-button-primary uk-form-file">
-                        <input class="js-upload-select" type="file" multiple="true">
-                        <i class="uk-icon-upload"></i>
-                    </span>
+                        <a class="uk-button uk-button-large uk-button-primary"><i class="uk-icon-upload"></i></a>
+
+                        <div class="uk-dropdown uk-margin-top uk-text-left">
+
+                            <ul class="uk-nav uk-nav-dropdown uk-dropdown-close">
+                                <li class="uk-nav-header uk-flex uk-flex-middle">
+                                    <span class="uk-flex-item-1">{ App.i18n.get('Upload') }</span>
+                                    <span class="uk-badge uk-badge-outline uk-text-warning"> max. { App.Utils.formatSize(App.$data.maxUploadSize) }</span>
+                                </li>
+                                <li>
+                                    <a class="uk-form-file">
+                                        <i class="uk-icon-file-o uk-icon-justify"></i> { App.i18n.get('File') }
+                                        <input class="js-upload-select" aria-label="{ App.i18n.get('Select file') }" type="file" multiple="true">
+                                    </a>
+                                    <a class="uk-form-file">
+                                        <i class="uk-icon-folder-o uk-icon-justify"></i> { App.i18n.get('Folder') }
+                                        <input class="js-upload-folder" type="file" title="" multiple multiple directory webkitdirectory allowdirs>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
@@ -79,7 +102,7 @@
 
                     <strong class="uk-text-small uk-text-muted"><i class="uk-icon-folder-o uk-margin-small-right"></i> {folders.length} {App.i18n.get('Folders')}</strong>
 
-                    <div class="uk-grid uk-grid-small uk-grid-match uk-grid-width-medium-1-4">
+                    <div class="uk-grid uk-grid-small uk-grid-match uk-grid-width-medium-1-4 uk-grid-width-xlarge-1-5">
                         <div class="uk-grid-margin" each="{ folder,idx in folders }">
                             <div class="uk-panel uk-panel-box uk-panel-card">
                                 <div class="uk-flex">
@@ -132,7 +155,7 @@
                                     <div class="uk-text-muted uk-margin-small-top uk-flex">
                                         <strong>{ asset.mime }</strong>
                                         <span class="uk-flex-item-1 uk-margin-small-left uk-margin-small-right">{ App.Utils.formatSize(asset.size) }</span>
-                                        <a href="{ASSETS_URL+asset.path}" if="{ asset.mime.match(/^image\//) }" data-uk-lightbox="type:'image'" title="{ asset.width && [asset.width, asset.height].join('x') }">
+                                        <a href="{ASSETS_URL+asset.path}" if="{ asset.mime.match(/^image\//) }" data-uk-lightbox="type:'image'" title="{ asset.width && [asset.width, asset.height].join('x') }" aria-label="{ asset.width && [asset.width, asset.height].join('x') }">
                                             <i class="uk-icon-search"></i>
                                         </a>
                                     </div>
@@ -158,7 +181,7 @@
 
                                     <span if="{ asset.mime.match(/^image\//) == null }"><i class="uk-text-muted uk-icon-{ parent.getIconCls(asset.path) }"></i></span>
 
-                                    <a href="{ASSETS_URL+asset.path}" if="{ asset.mime.match(/^image\//) }" data-uk-lightbox="type:'image'" title="{ asset.width && [asset.width, asset.height].join('x') }">
+                                    <a href="{ASSETS_URL+asset.path}" if="{ asset.mime.match(/^image\//) }" data-uk-lightbox="type:'image'" title="{ asset.width && [asset.width, asset.height].join('x') }" aria-label="{ asset.width && [asset.width, asset.height].join('x') }">
                                         <cp-thumbnail src="{ASSETS_URL+asset.path}" width="20" height="20"></cp-thumbnail>
                                     </a>
                                 </td>
@@ -228,10 +251,17 @@
         
         <cp-asset asset="{asset._id}"></cp-asset>
         
-        <div class="uk-margin-top">
+        <div class="uk-margin-top" show="{modal}">
             <button type="button" class="uk-button uk-button-large uk-button-primary" onclick="{ saveAsset }">{ App.i18n.get('Save') }</button>
             <a class="uk-button uk-button-large uk-button-link" onclick="{ cancelAssetEdit }">{ App.i18n.get('Cancel') }</a>
         </div>
+
+        <cp-actionbar show="{!modal}">
+            <div class="uk-container uk-container-center">
+                <button type="button" class="uk-button uk-button-large uk-button-primary" onclick="{ saveAsset }">{ App.i18n.get('Save') }</button>
+                <a class="uk-button uk-button-large uk-button-link" onclick="{ cancelAssetEdit }">{ App.i18n.get('Cancel') }</a>
+            </div>
+        </cp-actionbar>
     </div>
 
 
@@ -268,10 +298,17 @@
 
         this.on('mount', function() {
 
+            if (opts.typefilter) {
+                this.refs.filtertype.value = opts.typefilter;
+            }
+
             this.listAssets(1);
 
             // handle uploads
-            App.assets.require(['/assets/lib/uikit/js/components/upload.js'], function() {
+            App.assets.require([
+                '/assets/lib/uikit/js/components/upload.js',
+                '/assets/lib/uppie.js'
+            ], function() {
 
                 var uploadSettings = {
 
@@ -323,6 +360,51 @@
                 uploadselect = UIkit.uploadSelect(App.$('.js-upload-select', $this.root)[0], uploadSettings),
                 uploaddrop   = UIkit.uploadDrop($this.refs.list, uploadSettings);
 
+                // upload folder
+                
+                var uppie = new Uppie();
+
+                uppie($this.root.querySelector('.js-upload-folder'), async (e, formData, files) => {
+                    
+                    if (!files) return;
+
+                    files.forEach(function(path) {
+                        formData.append("paths[]", path);
+                    });
+
+                    formData.append("folder", $this.folder);
+
+                    var xhr = new XMLHttpRequest();
+
+                    xhr.open('POST', App.route('/assetsmanager/uploadfolder'), true);
+
+                    xhr.setRequestHeader('Accept', 'application/json');
+
+                    xhr.upload.addEventListener('progress', function(e){
+                        uploadSettings.progress((e.loaded / e.total)*100, e);
+                    }, false);
+
+                    xhr.addEventListener('loadstart', function(e){ uploadSettings.loadstart(e); }, false);
+                    
+                    xhr.onreadystatechange = function() {
+
+                        if (xhr.readyState==4){
+
+                            var response = xhr.responseText;
+
+                            try {
+                                response = App.$.parseJSON(response);
+                            } catch(e) {
+                                response = false;
+                            }
+
+                            uploadSettings.allcomplete(response, xhr);
+                        }
+                    };
+                    
+                    xhr.send(formData);
+                });
+
                 UIkit.init(this.root);
             });
         });
@@ -336,6 +418,24 @@
 
             this.page    = page || 1;
             this.loading = true;
+
+            this.filter = null;
+
+            if (this.refs.filtertitle.value || this.refs.filtertype.value) {
+                this.filter = {};
+            }
+
+            if (this.refs.filtertitle.value) {
+
+                this.filter.$or = [];
+                this.filter.$or.push({title: {'$regex':this.refs.filtertitle.value, '$options': 'i'}});
+                this.filter.$or.push({description: {'$regex':this.refs.filtertitle.value, '$options': 'i'}});
+                this.filter.$or.push({tags: this.refs.filtertitle.value});
+            }
+
+            if (this.refs.filtertype.value) {
+                this.filter[this.refs.filtertype.value] = true;
+            }
 
             var options = {
                 filter : this.filter || null,
@@ -370,23 +470,6 @@
         }
 
         updateFilter() {
-
-            this.filter = null;
-
-            if (this.refs.filtertitle.value || this.refs.filtertype.value) {
-                this.filter = {};
-            }
-
-            if (this.refs.filtertitle.value) {
-
-                this.filter.$or = [];
-                this.filter.$or.push({title: {'$regex':this.refs.filtertitle.value}});
-                this.filter.$or.push({tags: {'$has':this.refs.filtertitle.value}});
-            }
-
-            if (this.refs.filtertype.value) {
-                this.filter[this.refs.filtertype.value] = true;
-            }
 
             this.listAssets(1);
         }
@@ -637,7 +720,7 @@
 
                   <div class="uk-form-row">
                       <label class="uk-text-small uk-text-bold">{ App.i18n.get('Description') }</label>
-                      <textarea class="uk-width-1-1" bind="asset.description"></textarea>
+                      <textarea class="uk-width-1-1" bind="asset.description" bind-event="input"></textarea>
                   </div>
 
                   <div class="uk-margin-large-top uk-text-center" if="{asset}">
@@ -647,7 +730,7 @@
                           <div class="cp-assets-fp" title="Focal Point" data-uk-tooltip></div>
                       </div>
                       <div class="uk-margin-top uk-text-truncate uk-text-small uk-text-muted">
-                          <a class="uk-button uk-button-outline uk-text-primary" href="{ASSETS_URL+asset.path}" target="_blank"><i class="uk-icon-link"></i></a>
+                          <a href="{ASSETS_URL+asset.path}" target="_blank"  title="{ App.i18n.get('Direct link to asset') }" data-uk-tooltip><i class="uk-icon-button uk-icon-button-outline uk-text-primary uk-icon-link"></i></a>
                       </div>
                   </div>
               </div>

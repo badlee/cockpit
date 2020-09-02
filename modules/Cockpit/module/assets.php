@@ -11,7 +11,7 @@
 $this->module('cockpit')->extend([
 
     'listAssets' => function($options = []) {
-
+        $this->app->trigger('cockpit.assets.find', [&$options]);
         $assets = $this->app->storage->find('cockpit/assets', $options)->toArray();
         $total  = (!isset($options['skip']) && !isset($options['limit']))
                    ? count($assets)
@@ -60,6 +60,10 @@ $this->module('cockpit')->extend([
                 $asset['mime'] = 'unknown';
             }
 
+            if ($asset['mime'] == 'image/svg') {
+                $asset['mime'] = 'image/svg+xml';
+            }
+
             if ($asset['image'] && !preg_match('/\.svg$/i', $file)) {
 
                 $info = getimagesize($file);
@@ -75,7 +79,7 @@ $this->module('cockpit')->extend([
                         $asset['colors'] = [];
                     }
 
-                    foreach($asset['colors'] as &$color) {
+                    foreach ($asset['colors'] as &$color) {
                         $color = sprintf("#%02x%02x%02x", $color[0], $color[1], $color[2]);
                     }
                 }
@@ -84,7 +88,7 @@ $this->module('cockpit')->extend([
             $opts  = ['mimetype' => $asset['mime']];
             $_meta = isset($meta[$idx]) && is_array($meta[$idx]) ? $meta[$idx] : $meta;
 
-            $this->app->trigger('cockpit.asset.upload', [&$asset, &$_meta, &$opts]);
+            $this->app->trigger('cockpit.asset.upload', [&$asset, &$_meta, &$opts, &$file, &$path]);
 
             if (!$asset) {
                 continue;
@@ -93,7 +97,10 @@ $this->module('cockpit')->extend([
             // move file
             $stream = fopen($file, 'r+');
             $this->app->filestorage->writeStream("assets://{$path}", $stream, $opts);
-            fclose($stream);
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
 
             foreach ($_meta as $key => $val) {
                 $asset[$key] = $val;
@@ -114,7 +121,14 @@ $this->module('cockpit')->extend([
 
     'uploadAssets' => function($param = 'files', $meta = []) {
 
-        $files     = $_FILES[$param] ?? [];
+        $files = [];
+
+        if (is_string($param) && isset($_FILES[$param])) {
+            $files = $_FILES[$param];
+        } elseif (is_array($param) && isset($param['name'], $param['error'], $param['tmp_name'])) {
+            $files = $param;
+        }
+
         $uploaded  = [];
         $failed    = [];
         $_files    = [];
@@ -136,6 +150,10 @@ $this->module('cockpit')->extend([
 
                     $_files[]   = $_file;
                     $uploaded[] = $files['name'][$i];
+
+                    if (\preg_match('/\.(svg|xml)$/i', $_file)) {
+                        file_put_contents($_file, \SVGSanitizer::clean(\file_get_contents($_file)));
+                    }
 
                 } else {
                     $failed[] = $files['name'][$i];

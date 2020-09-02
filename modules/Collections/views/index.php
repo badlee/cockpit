@@ -1,3 +1,14 @@
+<script>
+    window.__collections = {{ json_encode($collections) }};
+</script>
+
+<style>
+    .panel-footer-aside {
+        display: inline-block;
+        min-width: 50px;
+    }
+</style>
+
 <div>
     <ul class="uk-breadcrumb">
         <li class="uk-active"><span>@lang('Collections')</span></li>
@@ -13,7 +24,7 @@
             <div class="uk-form-icon uk-form uk-text-muted">
 
                 <i class="uk-icon-filter"></i>
-                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter collections...')" onkeyup="{ updatefilter }">
+                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter collections...')" aria-label="@lang('Filter collections...')" onkeyup="{ updatefilter }">
 
             </div>
 
@@ -43,13 +54,13 @@
 
         <div class="uk-margin" if="{groups.length}">
 
-            <ul class="uk-tab uk-flex uk-flex-center uk-noselect">
+            <ul class="uk-tab uk-tab-noborder uk-flex uk-flex-center uk-noselect">
                 <li class="{ !group && 'uk-active'}"><a class="uk-text-capitalize { group && 'uk-text-muted'}" onclick="{ toggleGroup }">{ App.i18n.get('All') }</a></li>
                 <li class="{ group==parent.group && 'uk-active'}" each="{group in groups}"><a class="uk-text-capitalize { group!=parent.group && 'uk-text-muted'}" onclick="{ toggleGroup }">{ App.i18n.get(group) }</a></li>
             </ul>
         </div>
 
-        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-margin-top">
+        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-grid-width-xlarge-1-5 uk-margin-top">
 
             <div each="{ collection, idx in collections }" show="{ ingroup(collection.meta) && infilter(collection.meta) }">
 
@@ -57,7 +68,7 @@
 
                     <div class="uk-panel-teaser uk-position-relative">
                         <canvas width="600" height="350"></canvas>
-                        <a href="@route('/collections/entries')/{collection.name}" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
+                        <a aria-label="{ collection.label }" href="@route('/collections/entries')/{collection.name}" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
                             <div class="uk-width-1-4 uk-svg-adjust" style="color:{ (collection.meta.color) }">
                                 <img riot-src="{ collection.meta.icon ? '@url('assets:app/media/icons/')'+collection.meta.icon : '@url('collections:icon.svg')'}" alt="icon" data-uk-svg>
                             </div>
@@ -66,10 +77,9 @@
 
                     <div class="uk-grid uk-grid-small">
 
-                        <div data-uk-dropdown="delay:300">
+                        <div data-uk-dropdown="mode:'click'">
 
-                            <a class="uk-icon-cog" style="color:{ (collection.meta.color) }" href="@route('/collections/collection')/{ collection.name }" if="{ collection.meta.allowed.edit }"></a>
-                            <a class="uk-icon-cog" style="color:{ (collection.meta.color) }" if="{ !collection.meta.allowed.edit }"></a>
+                            <a class="panel-footer-aside uk-icon-cog" style="color:{ (collection.meta.color) };"></a>
 
                             <div class="uk-dropdown">
                                 <ul class="uk-nav uk-nav-dropdown">
@@ -81,16 +91,20 @@
                                     @hasaccess?('collections', 'delete')
                                     <li class="uk-nav-item-danger" if="{ collection.meta.allowed.delete }"><a class="uk-dropdown-close" onclick="{ parent.remove }">@lang('Delete')</a></li>
                                     @end
+                                    <li class="uk-nav-divider" if="{ collection.meta.allowed.edit || collection.meta.allowed.entries_delete }"></li>
+                                    <li><a href="@route('/collections/trash/collection')/{collection.name}" if="{ collection.meta.allowed.entries_delete }">@lang('Trash')</a></li>
                                     <li class="uk-nav-divider" if="{ collection.meta.allowed.edit }"></li>
                                     <li class="uk-text-truncate" if="{ collection.meta.allowed.edit }"><a href="@route('/collections/export')/{ collection.name }" download="{ collection.meta.name }.collection.json">@lang('Export entries')</a></li>
                                     <li class="uk-text-truncate" if="{ collection.meta.allowed.edit }"><a href="@route('/collections/import/collection')/{ collection.name }">@lang('Import entries')</a></li>
                                 </ul>
                             </div>
                         </div>
-
-                        <a class="uk-text-bold uk-flex-item-1 uk-text-center uk-link-muted" href="@route('/collections/entries')/{collection.name}">{ collection.label }</a>
-                        <div>
-                            <span class="uk-badge" riot-style="background-color:{ (collection.meta.color) }">{ collection.meta.itemsCount }</span>
+                        <div class="uk-flex-item-1 uk-text-center uk-text-truncate"><a class="uk-text-bold uk-link-muted" href="@route('/collections/entries')/{collection.name}" title="{ collection.label }">{ collection.label }</a></div>
+                        <div class="panel-footer-aside uk-text-right">
+                            <span class="uk-badge" riot-style="background-color:{ (collection.meta.color) }">
+                                <span if="{ collection.meta.itemsCount !==null }">{ collection.meta.itemsCount }</span>
+                                <span class="uk-icon-spinner uk-icon-spin" if="{ collection.meta.itemsCount == null }"></span>
+                            </span>
                         </div>
                     </div>
 
@@ -107,7 +121,7 @@
 
         var $this = this;
 
-        this.collections = {{ json_encode($collections) }};
+        this.collections = window.__collections;
         this.groups = [];
 
         this.collections.forEach(function(collection) {
@@ -121,6 +135,9 @@
             this.groups = _.uniq(this.groups.sort());
         }
 
+        this.on('mount', function() {
+            this.loadCounts();
+        });
 
         remove(e, collection) {
 
@@ -171,6 +188,21 @@
             name  = [collection.name.toLowerCase(), collection.label.toLowerCase()].join(' ');
 
             return name.indexOf(value) !== -1;
+        }
+
+        loadCounts() {
+
+            App.request('/collections/utils/getUserCollections').then(function(collections) {
+
+                this.collections.forEach(function(collection) {
+
+                    if (collections[collection.name]) {
+                        collection.meta.itemsCount = collections[collection.name].itemsCount;
+                    }
+                });
+                
+                this.update();
+            }.bind(this));
         }
 
     </script>

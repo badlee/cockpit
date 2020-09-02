@@ -1,3 +1,7 @@
+<script>
+    window.__forms = {{ json_encode($forms) }};
+</script>
+
 <div>
     <ul class="uk-breadcrumb">
         <li class="uk-active"><span>@lang('Forms')</span></li>
@@ -13,7 +17,7 @@
             <div class="uk-form-icon uk-form uk-text-muted">
 
                 <i class="uk-icon-filter"></i>
-                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter forms...')" onkeyup="{ updatefilter }">
+                <input class="uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter forms...')" aria-label="@lang('Filter forms...')" onkeyup="{ updatefilter }">
 
             </div>
 
@@ -40,7 +44,7 @@
         </div>
 
 
-        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-margin-top">
+        <div class="uk-grid uk-grid-match uk-grid-gutter uk-grid-width-1-1 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-grid-width-xlarge-1-5 uk-margin-top">
 
             <div each="{ form, idx in forms }" show="{ infilter(form.meta) }">
 
@@ -48,7 +52,7 @@
 
                     <div class="uk-panel-teaser uk-position-relative">
                         <canvas width="600" height="350"></canvas>
-                        <a href="@route('/forms/entries')/{form.name}" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
+                        <a aria-label="{ form.label }" href="@route('/forms/entries')/{form.name}" class="uk-position-cover uk-flex uk-flex-middle uk-flex-center">
                             <div class="uk-width-1-4 uk-svg-adjust" style="color:{ (form.meta.color) }">
                                 <img riot-src="{ form.meta.icon ? '@url('assets:app/media/icons/')'+form.meta.icon : '@url('forms:icon.svg')'}" alt="icon" data-uk-svg>
                             </div>
@@ -57,9 +61,9 @@
 
                     <div class="uk-grid uk-grid-small">
 
-                        <div data-uk-dropdown="delay:300">
+                        <div data-uk-dropdown="mode:'click'">
 
-                            <a class="uk-icon-cog" style="color:{ (form.meta.color) }" href="@route('/forms/form')/{ form.name }"></a>
+                            <a aria-label="@lang('Edit form')" class="uk-icon-cog" style="color:{ (form.meta.color) }"></a>
 
                             <div class="uk-dropdown">
                                 <ul class="uk-nav uk-nav-dropdown">
@@ -74,8 +78,9 @@
                             </div>
                         </div>
 
-                        <a class="uk-text-bold uk-flex-item-1 uk-text-center uk-link-muted" href="@route('/forms/entries')/{form.name}">{ form.label }</a>
-
+                        <div class="uk-flex-item-1 uk-text-center uk-text-truncate">
+                            <a class="uk-text-bold uk-link-muted" href="@route('/forms/entries')/{form.name}" title="{ form.label }">{ form.label }</a>
+                        </div>
                         <div>
                             <span class="uk-badge" style="background-color:{ (form.meta.color) }">{ form.meta.itemsCount }</span>
                         </div>
@@ -94,7 +99,7 @@
 
         var $this = this;
 
-        this.forms = {{ json_encode($forms) }};
+        this.forms = window.__forms;
 
         remove(e, form) {
 

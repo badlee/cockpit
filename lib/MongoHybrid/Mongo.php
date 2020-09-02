@@ -23,7 +23,7 @@ class Mongo {
         ], $driverOptions);
 
         $this->client  = new \MongoDB\Client($server, $options, $driverOptions);
-        $this->db      = $this->client->selectDatabase($options["db"]);
+        $this->db      = $this->client->selectDatabase($options['db']);
         $this->options = $options;
     }
 
@@ -49,13 +49,39 @@ class Mongo {
         return $this->db->dropCollection($name);
     }
 
+    public function renameCollection($name, $newname, $db = null) {
+
+        if ($db) {
+            $name = "{$db}/{$name}";
+            $newname = "{$db}/{$newname}";
+        }
+
+        $name = str_replace('/', '_', $name);
+        $newname = str_replace('/', '_', $newname);
+
+        $collections = iterator_to_array($this->db->listCollections([
+            'filter' => [ 'name' => $name ]
+        ]));
+
+        if (!count($collections)) {
+            return false;
+        }
+
+        //$dbname = $this->db->getDatabaseName();
+
+        // notice works for mongodb < 4.0
+        $this->db->command(["eval" => "db.{$name}.renameCollection({$newname})"]);
+
+        return true;
+    }
+
     public function findOneById($collection, $id){
 
         if (is_string($id)) $id = new \MongoDB\BSON\ObjectID($id);
 
-        $doc =  $this->getCollection($collection)->findOne(["_id" => $id]);
+        $doc =  $this->getCollection($collection)->findOne(['_id' => $id]);
 
-        if (isset($doc["_id"])) $doc["_id"] = (string) $doc["_id"];
+        if (isset($doc['_id'])) $doc['_id'] = (string) $doc['_id'];
 
         return $doc;
     }
@@ -64,23 +90,23 @@ class Mongo {
 
         if (!$filter) $filter = [];
 
-        $filter = $this->_fixMongoIds($filter);
+        $filter = $this->_fixMongoIds($filter, true);
         $doc    = $this->getCollection($collection)->findOne($filter, ['projection' => $projection]);
 
-        if (isset($doc["_id"])) $doc["_id"] = (string) $doc["_id"];
+        if (isset($doc['_id'])) $doc['_id'] = (string) $doc['_id'];
 
         return $doc;
     }
 
     public function find($collection, $options = []){
 
-        $filter = isset($options["filter"]) && $options["filter"] ? $options["filter"] : [];
-        $fields = isset($options["fields"]) && $options["fields"] ? $options["fields"] : [];
-        $limit  = isset($options["limit"])  && $options["limit"]  ? $options["limit"]  : null;
-        $sort   = isset($options["sort"])   && $options["sort"]   ? $options["sort"]   : null;
-        $skip   = isset($options["skip"])   && $options["skip"]   ? $options["skip"]   : null;
+        $filter = isset($options['filter']) && $options['filter'] ? $options['filter'] : [];
+        $fields = isset($options['fields']) && $options['fields'] ? $options['fields'] : [];
+        $limit  = isset($options['limit'])  && $options['limit']  ? $options['limit']  : null;
+        $sort   = isset($options['sort'])   && $options['sort']   ? $options['sort']   : null;
+        $skip   = isset($options['skip'])   && $options['skip']   ? $options['skip']   : null;
 
-        $filter = $this->_fixMongoIds($filter);
+        $filter = $this->_fixMongoIds($filter, true);
 
         $cursor = $this->getCollection($collection)->find($filter, [
             'projection' => $fields,
@@ -94,7 +120,7 @@ class Mongo {
         if (count($docs)) {
 
             foreach ($docs as &$doc) {
-                if(isset($doc["_id"])) $doc["_id"] = (string) $doc["_id"];
+                if(isset($doc['_id'])) $doc['_id'] = (string) $doc['_id'];
             }
 
         } else {
@@ -124,27 +150,32 @@ class Mongo {
 
         $ref['_id'] = $return->getInsertedId();
 
-        if (isset($ref["_id"])) $ref["_id"] = (string) $ref["_id"];
+        if (isset($ref['_id'])) $ref['_id'] = (string) $ref['_id'];
 
         $doc = $ref;
 
         return $return;
     }
 
-    public function save($collection, &$data) {
+    public function save($collection, &$data, $create = false) {
 
         $data = $this->_fixMongoIds($data);
+        $ref  = $data;
 
-        $ref = $data;
+        if (isset($data['_id'])) {
 
-        if (isset($data["_id"])) {
-            $return = $this->getCollection($collection)->updateOne(['_id' => $data["_id"]], ['$set' => $ref]);
+            if ($create) {
+                $return = $this->getCollection($collection)->replaceOne(['_id' => $data['_id']], $ref, ['upsert' => true]);
+            } else {
+                $return = $this->getCollection($collection)->updateOne(['_id' => $data['_id']], ['$set' => $ref]);
+            }
+
         } else {
             $return = $this->getCollection($collection)->insertOne($ref);
             $ref['_id'] = $return->getInsertedId();
         }
 
-        if (isset($ref["_id"])) $ref["_id"] = (string) $ref["_id"];
+        if (isset($ref['_id'])) $ref['_id'] = (string) $ref['_id'];
 
         $data = $ref;
 
@@ -168,53 +199,83 @@ class Mongo {
         return $this->getCollection($collection)->deleteMany($filter);
     }
 
-    public function count($collection, $filter=[]) {
+    public function removeField($collection, $field, $filter = []) {
+
+        $opts = ['$unset' => []];
+        $opts['$unset'][$field] = 1;
+
+        return $this->getCollection($collection)->updateMany($filter, $opts);
+    }
+
+    public function renameField($collection, $field, $newfield, $filter = []) {
+
+        $opts = ['$rename' => []];
+        $opts['$rename'][$field] = $newfield;
+
+        return $this->getCollection($collection)->updateMany($filter, $opts);
+    }
+
+    public function count($collection, $filter=[], $options=[]) {
 
         if (!$filter) $filter = [];
 
-        $filter = $this->_fixMongoIds($filter);
+        $filter = $this->_fixMongoIds($filter, true);
 
-        return $this->getCollection($collection)->count($filter);
+        return $this->getCollection($collection)->countDocuments($filter, $options);
     }
 
-    protected function _fixMongoIds(&$data) {
+    protected function _fixMongoIds(&$data, $infinite = false, $_level = 0) {
 
         if (!is_array($data)) {
             return $data;
         }
 
-        foreach ($data as $k => $v) {
+        if ($_level == 0 && isset($data[0])) {
+            foreach ($data as $i => $doc) {
+                $data[$i] = $this->_fixMongoIds($doc, $infinite);
+            }
+            return $data;
+        }
 
-            if (is_array($data[$k])) {
-                $data[$k] = $this->_fixMongoIds($data[$k]);
+        foreach ($data as $k => &$v) {
+
+            if (is_array($data[$k]) && $infinite) {
+                $data[$k] = $this->_fixMongoIds($data[$k], $infinite, $_level + 1);
             }
 
             if ($k === '_id') {
 
                 if (is_string($v)) {
-                    $v = new \MongoDB\BSON\ObjectID($v);
-                }
+                    
+                    $v = $v[0] === '@' ? \substr($v, 1) : new \MongoDB\BSON\ObjectID($v);
 
-                if (is_array($v) && isset($v['$in'])) {
+                } elseif (is_array($v)) {
 
-                    foreach ($v['$in'] as &$id) {
-                        if (is_string($id)) {
-                            $id = new \MongoDB\BSON\ObjectID($id);
+                    if (isset($v['$in'])) {
+
+                        foreach ($v['$in'] as &$id) {
+                            if (is_string($id)) {
+                                $id = new \MongoDB\BSON\ObjectID($id);
+                            }
                         }
                     }
-                }
-
-                if (is_array($v) && isset($v['$nin'])) {
-
-                    foreach ($v['$nin'] as &$id) {
-                        if (is_string($id)) {
-                            $id = new \MongoDB\BSON\ObjectID($id);
+    
+                    if (isset($v['$nin'])) {
+    
+                        foreach ($v['$nin'] as &$id) {
+                            if (is_string($id)) {
+                                $id = new \MongoDB\BSON\ObjectID($id);
+                            }
                         }
                     }
+
+                    if (isset($v['$ne']) && is_string($v['$ne'])) {
+    
+                        $v['$ne'] = new \MongoDB\BSON\ObjectID($v['$ne']);                    
+                    }
+
                 }
             }
-
-            $data[$k] = $v;
         }
 
         return $data;

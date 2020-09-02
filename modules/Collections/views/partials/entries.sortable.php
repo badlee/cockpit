@@ -19,7 +19,7 @@
         <img class="uk-svg-adjust" src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="50" alt="icon" data-uk-svg>
         @if($collection['description'])
         <div class="uk-container-center uk-margin-top uk-width-medium-1-2">
-            {{ htmlspecialchars($collection['description']) }}
+            {{ htmlspecialchars($collection['description'], ENT_QUOTES, 'UTF-8') }}
         </div>
         @endif
     </div>
@@ -33,7 +33,7 @@
                 <img class="uk-svg-adjust" src="@url($collection['icon'] ? 'assets:app/media/icons/'.$collection['icon']:'collections:icon.svg')" width="50" alt="icon" data-uk-svg>
                 @if($collection['description'])
                 <div class="uk-margin-top uk-text-small uk-text-muted">
-                    {{ htmlspecialchars($collection['description']) }}
+                    {{ htmlspecialchars($collection['description'], ENT_QUOTES, 'UTF-8') }}
                 </div>
                 @endif
                 <hr>
@@ -45,11 +45,22 @@
 
         <div class="uk-clearfix uk-margin-top" show="{ !loading && (entries.length || filter) }">
 
+            <div class="uk-float-left uk-form-select uk-margin-right" if="{ languages.length }">
+                <span class="uk-padding-horizontal-remove uk-button uk-button-large uk-button-link {lang ? 'uk-text-primary' : 'uk-text-muted'}">
+                    <i class="uk-icon-globe"></i>
+                    { lang ? _.find(languages,{'code':lang}).label : App.$data.languageDefaultLabel }
+                </span>
+                <select onchange="{changelanguage}">
+                    <option value="" selected="{lang === ''}">{App.$data.languageDefaultLabel}</option>
+                    <option each="{language,idx in languages}" value="{language.code}" selected="{lang === language.code}">{language.label}</option>
+                </select>
+            </div>
+
             <div class="uk-float-left uk-width-1-2">
                 <div class="uk-form-icon uk-form uk-width-1-1 uk-text-muted">
 
                     <i class="uk-icon-search"></i>
-                    <input class="uk-width-1-1 uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="@lang('Filter items...')" onchange="{ updatefilter }">
+                    <input class="uk-width-1-1 uk-form-large uk-form-blank {filter && filter.match(/\{(.*)\}/) && 'uk-text-monospace'}" type="text" ref="txtfilter" placeholder="@lang('Filter items...')" onchange="{ updatefilter }">
 
                 </div>
             </div>
@@ -106,6 +117,11 @@
         this.entries    = [];
         this.selected   = [];
         this.fieldsidx  = {};
+        this.languages  = App.$data.languages;
+
+        if (this.languages.length) {
+            this.lang = App.session.get('collections.entry.'+this.collection._id+'.lang', '');
+        }
 
         this.fields = this.collection.fields.filter(function(field){
 
@@ -259,6 +275,10 @@
 
             var options = {};
 
+            if (this.lang) {
+                options.lang = this.lang;
+            }
+
             if (this.filter) {
                 options.filter = this.filter;
             }
@@ -334,6 +354,14 @@
 
         this.batchedit = function() {
             this.tags['entries-batchedit'].open(this.entries, this.selected)
+        }
+
+        this.changelanguage = function(e) {
+            var lang = e.target.value;
+            App.session.set('collections.entry.'+this.collection._id+'.lang', lang);
+            this.lang = lang;
+            this.load(false);
+            this.update();
         }
 
     </script>
