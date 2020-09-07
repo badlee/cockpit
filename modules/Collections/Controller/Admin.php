@@ -221,6 +221,8 @@ class Admin extends \Cockpit\AuthController {
             return $this->helper('admin')->denyRequest();
         }
 
+        $linked = [];
+        $canEdit = $this->app->module('collections')->hasaccess($collection, 'entries_edit');
         $collection    = $this->module('collections')->collection($collection);
         $entry         = new \ArrayObject([]);
         $excludeFields = [];
@@ -273,6 +275,34 @@ class Admin extends \Cockpit\AuthController {
 
         if ($override = $this->app->path('#config:collections/'.$collection['name'].'/views/entry.php')) {
             $view = $override;
+        }else{
+            $_collections = $this->app->module('collections')->getCollectionsInGroup(null, false);
+            foreach ($_collections as $name => $meta) {
+                if(isset($meta['fields']) && $meta['fields']){
+                    foreach ($meta["fields"] as $field) {
+                        if(($field["type"] == "collectionlink" || $field["type"] == "collectionlinkselect") && isset($field["options"],$field["options"]["link"]) && $field["options"]["link"] == $collection['name']){
+                            $field["label"] = empty($field["label"]) ? ucfirst($field["name"]) : $field["label"];
+                            if(!isset($linked[$name])) {
+                                $linked[$name] = $meta;
+                                $linked[$name]["label"] = empty($meta["label"]) ? ucfirst($name) : $meta["label"];
+                                $linked[$name]["createEntryUrl"] = $this->app->routeUrl('/collections/entry/'.$meta['name']);
+                                $linked[$name]["canEdit"] = $this->app->module('collections')->hasaccess($name, 'entries_edit');
+                                $linked[$name]["canCreate"] = $this->app->module('collections')->hasaccess($name, 'entries_create');
+                                $linked[$name]["canDelete"] = $this->app->module('collections')->hasaccess($name, 'entries_delete');
+                                $linked[$name]["icon"] = $this->app->baseUrl($meta['icon'] ? 'assets:app/media/icons/'.$meta['icon']:'collections:icon.svg');
+                                $linked[$name]["description"] = !empty($meta["description"]) ? htmlspecialchars($meta['description'], ENT_QUOTES, 'UTF-8') : "";
+                                $linked[$name]["selectedLink"] = [
+                                    "name" => $field["name"],
+                                    "label" => $field["label"]
+                                ];
+                                $linked[$name]["@links"] = [];
+                            }
+                            $linked[$name]["@links"][$field["name"]] = $field;
+                        }
+                    }
+                }
+            }
+            $view = 'collections:views/new-entry.php';
         }
 
         return $this->render($view, compact('collection', 'entry', 'excludeFields'));
