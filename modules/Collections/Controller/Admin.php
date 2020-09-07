@@ -223,6 +223,8 @@ class Admin extends \Cockpit\AuthController {
 
         $linked = [];
         $canEdit = $this->app->module('collections')->hasaccess($collection, 'entries_edit');
+        $isEdit = !!$id ;
+        $isNew = !$isEdit;
         $collection    = $this->module('collections')->collection($collection);
         $entry         = new \ArrayObject([]);
         $excludeFields = [];
@@ -271,7 +273,6 @@ class Admin extends \Cockpit\AuthController {
             }
         }
 
-        $view = 'collections:views/entry.php';
 
         if ($override = $this->app->path('#config:collections/'.$collection['name'].'/views/entry.php')) {
             $view = $override;
@@ -305,7 +306,7 @@ class Admin extends \Cockpit\AuthController {
             $view = 'collections:views/new-entry.php';
         }
 
-        return $this->render($view, compact('collection', 'entry', 'excludeFields'));
+        return $this->render($view, compact('collection', 'entry', 'excludeFields','linked','isNew','isEdit','canEdit'));
     }
 
     public function save_entry($collection) {

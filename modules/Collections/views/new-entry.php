@@ -113,7 +113,6 @@
                 </li>
             </ul>
 
-            
             @if($isEdit && count($linked))
             <div class="uk-flex uk-flex-middle tab-entry-line">
                 <a class="uk-text-bold uk-link-muted uk-icon-chevron-left" if="{isOverflowing}" onclick="{scrollTabLeft}"></a>
