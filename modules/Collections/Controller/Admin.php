@@ -285,7 +285,7 @@ class Admin extends \Cockpit\AuthController {
                             $field["label"] = empty($field["label"]) ? ucfirst($field["name"]) : $field["label"];
                             if(!isset($linked[$name])) {
                                 $linked[$name] = $meta;
-                                $linked[$name]["label"] = empty($meta["label"]) ? ucfirst($name) : $meta["label"];
+                                $linked[$name]["label"] = !isset($field["options"]) || empty($field["options"]["label"]) ? (empty($meta["label"]) ? ucfirst($name) : $meta["label"]) : $field["options"]["label"];
                                 $linked[$name]["createEntryUrl"] = $this->app->routeUrl('/collections/entry/'.$meta['name']);
                                 $linked[$name]["canEdit"] = $this->app->module('collections')->hasaccess($name, 'entries_edit');
                                 $linked[$name]["canCreate"] = $this->app->module('collections')->hasaccess($name, 'entries_create');

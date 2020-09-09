@@ -78,7 +78,7 @@
         </div>
 
         <div class="uk-width-medium-1-3 uk-viewport-height-1-2 uk-container-center uk-text-center uk-flex uk-flex-center uk-flex-middle"
-            if="{ !loading && (!entries || !entries.length) }">
+            if="{ collection.canCreate && !loading && (!entries || !entries.length) }">
             <div class="uk-animation-scale">
                 <img class="uk-svg-adjust" src="{collection.icon}" width="50" alt="icon" data-uk-svg>
                 <div class="uk-margin-top uk-text-small uk-text-muted" if="{collection.description}">
@@ -91,7 +91,7 @@
         </div>
         <div class="uk-margin-top" show="{ !loading  }">
             <div class="uk-text-xlarge uk-text-muted uk-viewport-height-1-3 uk-flex uk-flex-center uk-flex-middle"
-                if="{ !entries.length && !loading }">
+                if="{ !collection.canCreate && !entries.length && !loading }">
                 <div>{App.i18n.get('No entries found')}</div>
             </div>
             <div class="uk-grid uk-grid-match uk-grid-width-medium-1-4 uk-flex-center"

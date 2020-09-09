@@ -65,6 +65,11 @@
         font-size: 14px;
         line-height: 16px;
     }
+    .uk-svg-adjust-link{
+        position: relative;
+        top: 2px;
+        width : 18px;
+    }
 </style>
 
 <script>
@@ -159,7 +164,8 @@
             <div class="uk-width-1-1 uk-flex uk-flex-middle uk-margin-top uk-text-bold uk-h3 uk-tab-content-title">
                 <div class="uk-margin-small-right">
                 @if(count($meta["@links"]) > 1)
-                    <img class="uk-svg-adjust" src="@url('collections:icon.svg')" width="20" alt="icon" data-uk-svg>
+                    <img class="uk-svg-adjust uk-svg-adjust-link" src="@url('collections:icon.svg')" alt="icon" data-uk-svg> 
+                    <span  class="uk-margin-small-right uk-text-bold uk-link-muted uk-tab-content-title-label">{App.i18n.get("Link")} :</span>
                     <span  data-uk-dropdown="mode:'hover', delay:30" class="uk-margin-right uk-text-bold uk-link-muted uk-tab-content-title-label">
                         { linked.{{$name}}.selectedLink.label }<i class=" uk-margin-small-left uk-icon-chevron-down"></i>
                         <div class="uk-dropdown uk-dropdown-close">
@@ -171,7 +177,8 @@
                         </div>
                     </span>
                 @else
-                    <img class="uk-svg-adjust" src="@url('collections:icon.svg')" width="20" alt="icon" data-uk-svg>
+                    <img class="uk-svg-adjust uk-svg-adjust-link" src="@url('collections:icon.svg')" alt="icon" data-uk-svg>
+                    <span  class="uk-margin-small-right uk-text-bold uk-link-muted uk-tab-content-title-label">{App.i18n.get("Link")} :</span>
                     <span class="uk-margin-right uk-text-bold uk-link-muted uk-tab-content-title-label">
                         { linked.{{$name}}.selectedLink.label }
                     </span>

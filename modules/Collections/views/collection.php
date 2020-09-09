@@ -39,11 +39,11 @@
                             <div class="uk-dropdown uk-dropdown-scrollable uk-dropdown-width-2">
                                 <div class="uk-grid uk-grid-gutter">
                                     <div>
-                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon=""><img src="@url('collections:icon.svg')" width="30" icon=""></a>
+                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon=""><img src="@url('collections:icon.svg')" width="60" icon=""></a>
                                     </div>
-                                    @foreach($app->helper("fs")->ls('*.svg', 'assets:app/media/icons') as $icon)
+                                    @foreach($app->helper("fs")->ls('*.svg', 'assets:app/media/icons/user') as $icon)
                                     <div>
-                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon="{{ $icon->getFilename() }}"><img src="@url($icon->getRealPath())" width="30" icon="{{ $icon->getFilename() }}"></a>
+                                        <a class="uk-dropdown-close" onclick="{ selectIcon }" icon="user/{{ $icon->getFilename() }}"><img src="@url($icon->getRealPath())" width="60" icon="user/{{ $icon->getFilename() }}"></a>
                                     </div>
                                     @endforeach
                                 </div>
