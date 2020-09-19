@@ -38,7 +38,6 @@ $app->on('admin.init', function() {
         'route' => '/collections',
         'active' => $active
     ]);
-
     if ($active) {
         $this->helper('admin')->favicon = 'collections:icon.svg';
     } 

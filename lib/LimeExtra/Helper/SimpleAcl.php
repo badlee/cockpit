@@ -71,6 +71,15 @@ class SimpleAcl
     /**
      * @return array
      */
+    public function getRights()
+    {
+        return $this->rights;
+    }
+
+
+    /**
+     * @return array
+     */
     public function getResources()
     {
         return $this->resources;

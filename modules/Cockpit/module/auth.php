@@ -83,7 +83,11 @@ $this->module('cockpit')->extend([
         }
 
         if ($group) {
-            if ($app('acl')->hasaccess($group, $resource, $action)) return true;
+            if(is_array($action))
+                return count(array_filter($action, function($action) use($app, $group, $resource){
+                    return $app('acl')->hasaccess($group, $resource, $action);
+                })) != 0;
+            else if ($app('acl')->hasaccess($group, $resource, $action)) return true;
         }
 
         return false;
