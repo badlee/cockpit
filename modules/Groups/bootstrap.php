@@ -7,7 +7,7 @@ $app->path('groups', basename(dirname(__DIR__)).'/Groups/');
 
 
 // Auth Api extension
-$this->module("cockpit")->extend([
+$app->module("cockpit")->extend([
     "getGroups" => function() use($app) {
 
         $groups__all_fields = $this->app->storage->find("cockpit/groups"); // why the heck does ['fields' => ['...']] result in nothing more then the ID per row returned?!
